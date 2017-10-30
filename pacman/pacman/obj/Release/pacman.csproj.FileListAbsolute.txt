@@ -1,0 +1,9 @@
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Release\pacman.exe.config
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Release\pacman.exe
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Release\pacman.pdb
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.csprojResolveAssemblyReference.cache
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.Form1.resources
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.Properties.Resources.resources
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.csproj.GenerateResource.Cache
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.exe
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.pdb

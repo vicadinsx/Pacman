@@ -1,0 +1,9 @@
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\bin\Debug\pacman.exe.config
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\bin\Debug\pacman.exe
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\bin\Debug\pacman.pdb
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.csprojResolveAssemblyReference.cache
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.Form1.resources
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.Properties.Resources.resources
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.csproj.GenerateResource.Cache
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.exe
+c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.pdb
