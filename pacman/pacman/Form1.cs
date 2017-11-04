@@ -1,17 +1,21 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-
-
+using Proxy;
+using System.Runtime.Remoting.Channels;
+using System.Collections;
+using System.Net.Sockets;
+using System.Runtime.Remoting.Channels.Tcp;
 
 namespace pacman {
+
+    public delegate void SetBoxText(string Message);
     public partial class Form1 : Form {
+
+        ChatManagement obj;
+        CommonEvents eventproxy;
+        BinaryClientFormatterSinkProvider clientProv;
+        BinaryServerFormatterSinkProvider serverProv;
+        string lol = string.Empty;
 
         // direction player is moving in. Only one will be true
         bool goup;
@@ -39,6 +43,42 @@ namespace pacman {
         public Form1() {
             InitializeComponent();
             label2.Visible = false;
+
+            eventproxy = new CommonEvents();
+            eventproxy.MessageArrived += new ChatEvent(eventProxy_MessageArrived);
+
+            //Define client and server providers (full filter to be able to use events).  
+            clientProv = new BinaryClientFormatterSinkProvider();
+            serverProv = new BinaryServerFormatterSinkProvider();
+            serverProv.TypeFilterLevel =
+              System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+
+            //Dummy props.
+            Hashtable props = new Hashtable();
+            props["name"] = "ChatClient";
+            props["port"] = 0;
+
+            //Connect tcp channel with server and client provider settings.
+            TcpChannel channel = new TcpChannel(props, clientProv, serverProv);
+            ChannelServices.RegisterChannel(channel, false);
+
+            //Activate class and get object.
+            obj = (ChatManagement)Activator.GetObject(typeof(ChatManagement),
+                string.Format("tcp://localhost:{0}/ChatManagement", "8087"));
+
+            try
+            {
+                //Register event.
+                obj.MessageArrived += new ChatEvent(eventproxy.LocallyHandleMessageArrived);
+            }
+            catch (SocketException)
+            {
+                tbChat.Text = "Could not locate server";
+                ChannelServices.UnregisterChannel(channel);
+                return;
+            }
+
+            tbChat.Text = "Connected! \r\n";
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -160,8 +200,63 @@ namespace pacman {
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Enter) {
-                tbChat.Text += "\r\n" + tbMsg.Text; tbMsg.Clear(); tbMsg.Enabled = false; this.Focus();
+                obj.SafeInvokeMessageArrived(tbMsg.Text);
+                tbMsg.Enabled = false; this.Focus();
+                tbMsg.Text = string.Empty;
             }
         }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            //Define client and server providers (full filter to be able to use events).  
+            clientProv = new BinaryClientFormatterSinkProvider();
+            serverProv = new BinaryServerFormatterSinkProvider();
+            serverProv.TypeFilterLevel =
+              System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+
+            //Dummy props.
+            Hashtable props = new Hashtable();
+            props["name"] = "ChatClient";
+            props["port"] = 0;
+
+            //Connect tcp channel with server and client provider settings.
+            TcpChannel channel = new TcpChannel(props, clientProv, serverProv);
+            ChannelServices.RegisterChannel(channel, false);
+
+            //Activate class and get object.
+            obj = (ChatManagement)Activator.GetObject(typeof(ChatManagement),
+                string.Format("tcp://localhost:{0}/ChatManagement", "8087"));
+
+            try
+            {
+                //Register event.
+                obj.MessageArrived += new ChatEvent(eventproxy.LocallyHandleMessageArrived);
+            }
+            catch (SocketException)
+            {
+                tbChat.Text = "Could not locate server";
+                ChannelServices.UnregisterChannel(channel);
+                return;
+            }
+
+            tbChat.Text = "Connected! \r\n";
+        }
+
+        void eventProxy_MessageArrived(string Message)
+        {
+            SetTextBox(Message);
+        }
+
+        private void SetTextBox(string Message)
+        {
+            if (tbChat.InvokeRequired)
+            {
+                this.BeginInvoke(new SetBoxText(SetTextBox), new object[] { Message });
+                return;
+            }
+            else
+                tbChat.AppendText(Message + "\r\n");
+        }
+
     }
 }

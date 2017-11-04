@@ -7,3 +7,5 @@ C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.Properties
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.csproj.GenerateResource.Cache
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.exe
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Release\pacman.pdb
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Release\Proxy.dll
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Release\Proxy.pdb

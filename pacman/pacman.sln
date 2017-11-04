@@ -5,6 +5,10 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pacman", "pacman\pacman.csproj", "{ECE5A838-E181-493A-B9A2-6ADD01DE37F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{6E322048-35B5-43D1-9CB7-FD1B55ADE665}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proxy", "Proxy\Proxy.csproj", "{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +19,14 @@ Global
 		{ECE5A838-E181-493A-B9A2-6ADD01DE37F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECE5A838-E181-493A-B9A2-6ADD01DE37F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ECE5A838-E181-493A-B9A2-6ADD01DE37F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E322048-35B5-43D1-9CB7-FD1B55ADE665}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E322048-35B5-43D1-9CB7-FD1B55ADE665}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E322048-35B5-43D1-9CB7-FD1B55ADE665}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E322048-35B5-43D1-9CB7-FD1B55ADE665}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
