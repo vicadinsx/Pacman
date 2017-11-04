@@ -11,11 +11,12 @@ namespace pacman {
     public delegate void SetBoxText(string Message);
     public partial class Form1 : Form {
 
-        ChatManagement obj;
+        GameManagement obj;
         CommonEvents eventproxy;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
         string lol = string.Empty;
+        private int playerNumber;
 
         // direction player is moving in. Only one will be true
         bool goup;
@@ -45,7 +46,8 @@ namespace pacman {
             label2.Visible = false;
 
             eventproxy = new CommonEvents();
-            eventproxy.MessageArrived += new ChatEvent(eventProxy_MessageArrived);
+            eventproxy.ClientInputs += new PlayerInput(eventProxy_PlayerInput);
+            eventproxy.GameEvents += new GameEvent(eventProxy_GameEvent);
 
             //Define client and server providers (full filter to be able to use events).  
             clientProv = new BinaryClientFormatterSinkProvider();
@@ -55,7 +57,7 @@ namespace pacman {
 
             //Dummy props.
             Hashtable props = new Hashtable();
-            props["name"] = "ChatClient";
+            props["name"] = "GameClient";
             props["port"] = 0;
 
             //Connect tcp channel with server and client provider settings.
@@ -63,13 +65,15 @@ namespace pacman {
             ChannelServices.RegisterChannel(channel, false);
 
             //Activate class and get object.
-            obj = (ChatManagement)Activator.GetObject(typeof(ChatManagement),
-                string.Format("tcp://localhost:{0}/ChatManagement", "8087"));
+            obj = (GameManagement)Activator.GetObject(typeof(GameManagement),
+                string.Format("tcp://localhost:{0}/GameManagement", "8087"));
 
             try
             {
                 //Register event.
-                obj.MessageArrived += new ChatEvent(eventproxy.LocallyHandleMessageArrived);
+                obj.GameEvents += new GameEvent(eventproxy.LocallyHandleGameEvent);
+                obj.InputArrived += new PlayerInput(eventproxy.LocallyHandlePlayerInput);
+                playerNumber = obj.RegisterClient();
             }
             catch (SocketException)
             {
@@ -79,6 +83,7 @@ namespace pacman {
             }
 
             tbChat.Text = "Connected! \r\n";
+            tbChat.Text += playerNumber == -1 ? "Game is full!\r\n" : "You are player number " + playerNumber + "\r\n";
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -206,43 +211,15 @@ namespace pacman {
             }
         }
 
-        private void button2_Click(object sender, EventArgs e)
+        void eventProxy_GameEvent(string Message)
         {
-            //Define client and server providers (full filter to be able to use events).  
-            clientProv = new BinaryClientFormatterSinkProvider();
-            serverProv = new BinaryServerFormatterSinkProvider();
-            serverProv.TypeFilterLevel =
-              System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
-
-            //Dummy props.
-            Hashtable props = new Hashtable();
-            props["name"] = "ChatClient";
-            props["port"] = 0;
-
-            //Connect tcp channel with server and client provider settings.
-            TcpChannel channel = new TcpChannel(props, clientProv, serverProv);
-            ChannelServices.RegisterChannel(channel, false);
-
-            //Activate class and get object.
-            obj = (ChatManagement)Activator.GetObject(typeof(ChatManagement),
-                string.Format("tcp://localhost:{0}/ChatManagement", "8087"));
-
-            try
+            if(Message.Equals("START"))
             {
-                //Register event.
-                obj.MessageArrived += new ChatEvent(eventproxy.LocallyHandleMessageArrived);
+                SetTextBox("Session full, game starting!");
             }
-            catch (SocketException)
-            {
-                tbChat.Text = "Could not locate server";
-                ChannelServices.UnregisterChannel(channel);
-                return;
-            }
-
-            tbChat.Text = "Connected! \r\n";
         }
 
-        void eventProxy_MessageArrived(string Message)
+        void eventProxy_PlayerInput(int playerNumber, string Message)
         {
             SetTextBox(Message);
         }

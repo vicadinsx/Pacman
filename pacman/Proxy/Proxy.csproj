@@ -41,7 +41,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChatManagement.cs" />
+    <Compile Include="Client.cs" />
     <Compile Include="CommonEvents.cs" />
+    <Compile Include="GameManagement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

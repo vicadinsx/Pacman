@@ -14,7 +14,7 @@ namespace Server
 
             Hashtable props = new Hashtable();
             props["port"] = 8087;
-            props["name"] = "ChatServer";
+            props["name"] = "GameServer";
 
             //Set up for remoting events properly
             BinaryServerFormatterSinkProvider serverProv =
@@ -26,8 +26,8 @@ namespace Server
             ChannelServices.RegisterChannel(channel, false);
 
             RemotingConfiguration.RegisterWellKnownServiceType(
-                typeof(ChatManagement),
-                "ChatManagement",
+                typeof(GameManagement),
+                "GameManagement",
                 WellKnownObjectMode.Singleton);
 
 
