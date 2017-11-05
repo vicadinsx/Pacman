@@ -17,6 +17,7 @@ namespace pacman {
         BinaryServerFormatterSinkProvider serverProv;
         string lol = string.Empty;
         private int playerNumber;
+        bool gameRunning;
 
         // direction player is moving in. Only one will be true
         bool goup;
@@ -42,8 +43,10 @@ namespace pacman {
         int ghost3y = 5;            
 
         public Form1() {
+            
             InitializeComponent();
             label2.Visible = false;
+            gameRunning = false;
 
             eventproxy = new CommonEvents();
             eventproxy.ClientInputs += new PlayerInput(eventProxy_PlayerInput);
@@ -126,6 +129,7 @@ namespace pacman {
         private void timer1_Tick(object sender, EventArgs e) {
             label1.Text = "Score: " + score;
 
+            if (!gameRunning) return;
             //move player
             if (goleft) {
                 if (pacman.Left > (boardLeft))
@@ -215,7 +219,8 @@ namespace pacman {
         {
             if(Message.Equals("START"))
             {
-                SetTextBox("Session full, game starting!");
+                gameRunning = true;
+                SetTextBox("Session full, game is starting!");
             }
         }
 
