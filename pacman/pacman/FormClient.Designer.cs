@@ -193,12 +193,6 @@
             this.label2.TabIndex = 72;
             this.label2.Text = "label2";
             // 
-            // timer1
-            // 
-            this.timer1.Enabled = true;
-            this.timer1.Interval = 20;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
-            // 
             // pinkGhost
             // 
             this.pinkGhost.BackColor = System.Drawing.Color.Transparent;

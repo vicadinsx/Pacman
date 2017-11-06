@@ -6,6 +6,22 @@ using System.Threading.Tasks;
 
 namespace Proxy
 {
+    [Serializable]
+    public class PlayerGameObject
+    {
+        public bool goup;
+        public bool godown;
+        public bool goleft;
+        public bool goright;
+
+        public void clearMovement()
+        {
+            goup = false;
+            godown = false;
+            goleft = false;
+            goright = false;
+        }
+    }
     public enum Movement
     {
         UNDEFINED,
@@ -24,6 +40,8 @@ namespace Proxy
         //TODO
         //Create methods for Input receiving
         void RegisterMovement(int playerNumber, Movement movement);
+
+        void UnRegisterMovement(int playerNumber, Movement movement);
     }
 
     //Client interface
@@ -35,6 +53,6 @@ namespace Proxy
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)
-        void DoMovements(Movement[] movements);
+        void DoMovements(PlayerGameObject[] movements);
     }
 }

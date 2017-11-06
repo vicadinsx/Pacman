@@ -43,15 +43,21 @@ namespace Server
     class GameServerServices : MarshalByRefObject, IServer
     {
         List<IClient> clients;
-        Movement[] currentMovements;
+        PlayerGameObject[] currentMovements;
         private const int MAX_NUMBER = 2;
-        private const int MS_TIMER = 20;
+        private const int MS_TIMER = 30;
         System.Timers.Timer movementTimer;
 
         GameServerServices()
         {
             clients = new List<IClient>(MAX_NUMBER);
-            currentMovements = new Movement[MAX_NUMBER];
+            currentMovements = new PlayerGameObject[MAX_NUMBER];
+
+            for(int i=0; i< MAX_NUMBER; i++)
+            {
+                currentMovements[i] = new PlayerGameObject();
+            }
+
             movementTimer = new System.Timers.Timer(MS_TIMER);
 
             movementTimer.Elapsed += RoundTimer;
@@ -124,7 +130,47 @@ namespace Server
         {
             lock (currentMovements)
             {
-                currentMovements[playerNumber] = movement;
+                if(movement == Movement.UP)
+                {
+                    currentMovements[playerNumber].goup = true;
+                }
+                if (movement == Movement.DOWN)
+                {
+                    currentMovements[playerNumber].godown = true;
+                }
+                if (movement == Movement.LEFT)
+                {
+                    currentMovements[playerNumber].goleft = true;
+                }
+                if (movement == Movement.RIGHT)
+                {
+                    currentMovements[playerNumber].goright = true;
+                }
+
+            }
+        }
+
+        public void UnRegisterMovement(int playerNumber, Movement movement)
+        {
+            lock (currentMovements)
+            {
+                if (movement == Movement.UP)
+                {
+                    currentMovements[playerNumber].goup = false;
+                }
+                if (movement == Movement.DOWN)
+                {
+                    currentMovements[playerNumber].godown = false;
+                }
+                if (movement == Movement.LEFT)
+                {
+                    currentMovements[playerNumber].goleft = false;
+                }
+                if (movement == Movement.RIGHT)
+                {
+                    currentMovements[playerNumber].goright = false;
+                }
+
             }
         }
 
@@ -140,14 +186,6 @@ namespace Server
                 {
                     Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
                     clients.RemoveAt(i);
-                }
-            }
-
-            lock (currentMovements)
-            {
-                for (int i = 0; i < currentMovements.Length; i++)
-                {
-                    currentMovements[i] = Movement.UNDEFINED;
                 }
             }
         }
