@@ -57,11 +57,31 @@ namespace Server
                        typeof(IClient), "tcp://localhost:" + NewClientName + "/GameClient");
             clients.Add(newClient);
 
-            if(clients.Count == MAX_NUMBER)
+            ThreadStart tsNew = new ThreadStart(this.PublishNewPlayer);
+            Thread tNew = new Thread(tsNew);
+            tNew.Start();
+
+            if (clients.Count == MAX_NUMBER)
             {
                 ThreadStart ts = new ThreadStart(this.PublishGameStart);
                 Thread t = new Thread(ts);
                 t.Start();
+            }
+        }
+
+        private void PublishNewPlayer()
+        {
+            for (int i = 0; i < clients.Count; i++)
+            {
+                try
+                {
+                    ((IClient)clients[i]).GameEvent("NEWPLAYER", clients.Count.ToString());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                    clients.RemoveAt(i);
+                }
             }
         }
 
