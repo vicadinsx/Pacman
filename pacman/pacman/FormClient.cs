@@ -5,14 +5,15 @@ using System.Runtime.Remoting.Channels;
 using System.Collections;
 using System.Net.Sockets;
 using System.Runtime.Remoting.Channels.Tcp;
+using System.Drawing;
+using System.Runtime.Remoting;
 
 namespace pacman {
 
     public delegate void SetBoxText(string Message);
-    public partial class Form1 : Form {
+    public partial class FormClient : Form {
 
-        GameManagement obj;
-        CommonEvents eventproxy;
+        IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
         string lol = string.Empty;
@@ -42,15 +43,13 @@ namespace pacman {
         int ghost3x = 5;
         int ghost3y = 5;            
 
-        public Form1() {
+        public FormClient() {
             
             InitializeComponent();
             label2.Visible = false;
             gameRunning = false;
 
-            eventproxy = new CommonEvents();
-            eventproxy.ClientInputs += new PlayerInput(eventProxy_PlayerInput);
-            eventproxy.GameEvents += new GameEvent(eventProxy_GameEvent);
+            ClientServices.form = this;
 
             //Define client and server providers (full filter to be able to use events).  
             clientProv = new BinaryClientFormatterSinkProvider();
@@ -67,16 +66,21 @@ namespace pacman {
             TcpChannel channel = new TcpChannel(props, clientProv, serverProv);
             ChannelServices.RegisterChannel(channel, false);
 
+            ClientServices servicos = new ClientServices();
+            RemotingServices.Marshal(servicos, "GameClient",
+                typeof(ClientServices));
+
             //Activate class and get object.
-            obj = (GameManagement)Activator.GetObject(typeof(GameManagement),
-                string.Format("tcp://localhost:{0}/GameManagement", "8087"));
+            obj = (IServer)Activator.GetObject(typeof(IServer),
+                string.Format("tcp://localhost:{0}/GameManagement", "8086"));
+
+            var channelData = (ChannelDataStore)channel.ChannelData;
+            var port = new Uri(channelData.ChannelUris[0]).Port;
 
             try
             {
                 //Register event.
-                obj.GameEvents += new GameEvent(eventproxy.LocallyHandleGameEvent);
-                obj.InputArrived += new PlayerInput(eventproxy.LocallyHandlePlayerInput);
-                playerNumber = obj.RegisterClient();
+                obj.RegisterClient(port.ToString());
             }
             catch (SocketException)
             {
@@ -86,7 +90,6 @@ namespace pacman {
             }
 
             tbChat.Text = "Connected! \r\n";
-            tbChat.Text += playerNumber == -1 ? "Game is full!\r\n" : "You are player number " + playerNumber + "\r\n";
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -209,18 +212,26 @@ namespace pacman {
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Enter) {
-                obj.SafeInvokeMessageArrived(tbMsg.Text);
                 tbMsg.Enabled = false; this.Focus();
                 tbMsg.Text = string.Empty;
             }
         }
 
-        void eventProxy_GameEvent(string Message)
+        public void GameEvent(string Message, string auxMessage)
         {
-            if(Message.Equals("START"))
+            switch(Message)
             {
-                gameRunning = true;
-                SetTextBox("Session full, game is starting!");
+                case "START":
+                    gameRunning = true;
+                    SetTextBox("Session full, game is starting!");
+                    addNewPlayer(int.Parse(auxMessage));
+                    break;
+                case "NEWPLAYER":
+                    gameRunning = true;
+                    SetTextBox("Player "+auxMessage+" joined the game.");
+                    break;
+                default:
+                    return;
             }
         }
 
@@ -229,6 +240,23 @@ namespace pacman {
             SetTextBox(Message);
         }
 
+        private void addNewPlayer(int numberOfPlayers)
+        {
+
+            for (int i = 1; i < numberOfPlayers; i++)
+            {
+                PictureBox picture = new PictureBox
+                {
+                    Name = "pacman"+i,
+                    Size = new Size(33, 31),
+                    Location = new Point(8, 80),
+                    Image = Properties.Resources.Left,
+                    Visible = true,
+                    SizeMode = PictureBoxSizeMode.StretchImage
+                };
+                this.Controls.Add(picture);
+            }
+        }
         private void SetTextBox(string Message)
         {
             if (tbChat.InvokeRequired)
@@ -240,5 +268,21 @@ namespace pacman {
                 tbChat.AppendText(Message + "\r\n");
         }
 
+    }
+
+    delegate void DelAddMsg(string mensagem, string auxMessage);
+
+    public class ClientServices : MarshalByRefObject, IClient
+    {
+        public static FormClient form;
+
+        public ClientServices()
+        {
+        }
+
+        public void GameEvent(string message, string auxMessage)
+        {
+            form.Invoke(new DelAddMsg(form.GameEvent), message, auxMessage);
+        }
     }
 }
