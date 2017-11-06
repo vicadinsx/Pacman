@@ -7,12 +7,14 @@ using System.Net.Sockets;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Drawing;
 using System.Runtime.Remoting;
+using System.Collections.Generic;
 
 namespace pacman {
 
     public delegate void SetBoxText(string Message);
     public partial class FormClient : Form {
 
+        List<PictureBox> pacmans;
         IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
@@ -95,19 +97,19 @@ namespace pacman {
         private void keyisdown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Left) {
                 goleft = true;
-                pacman.Image = Properties.Resources.Left;
+                pacmans[playerNumber].Image = Properties.Resources.Left;
             }
             if (e.KeyCode == Keys.Right) {
                 goright = true;
-                pacman.Image = Properties.Resources.Right;
+                pacmans[playerNumber].Image = Properties.Resources.Right;
             }
             if (e.KeyCode == Keys.Up) {
                 goup = true;
-                pacman.Image = Properties.Resources.Up;
+                pacmans[playerNumber].Image = Properties.Resources.Up;
             }
             if (e.KeyCode == Keys.Down) {
                 godown = true;
-                pacman.Image = Properties.Resources.down;
+                pacmans[playerNumber].Image = Properties.Resources.down;
             }
             if (e.KeyCode == Keys.Enter) {
                     tbMsg.Enabled = true; tbMsg.Focus();
@@ -135,20 +137,20 @@ namespace pacman {
             if (!gameRunning) return;
             //move player
             if (goleft) {
-                if (pacman.Left > (boardLeft))
-                    pacman.Left -= speed;
+                if (pacmans[playerNumber].Left > (boardLeft))
+                    pacmans[playerNumber].Left -= speed;
             }
             if (goright) {
-                if (pacman.Left < (boardRight))
-                pacman.Left += speed;
+                if (pacmans[playerNumber].Left < (boardRight))
+                pacmans[playerNumber].Left += speed;
             }
             if (goup) {
-                if (pacman.Top > (boardTop))
-                    pacman.Top -= speed;
+                if (pacmans[playerNumber].Top > (boardTop))
+                    pacmans[playerNumber].Top -= speed;
             }
             if (godown) {
-                if (pacman.Top < (boardBottom))
-                    pacman.Top += speed;
+                if (pacmans[playerNumber].Top < (boardBottom))
+                    pacmans[playerNumber].Top += speed;
             }
             //move ghosts
             redGhost.Left += ghost1;
@@ -171,22 +173,22 @@ namespace pacman {
             foreach (Control x in this.Controls) {
                 // checking if the player hits the wall or the ghost, then game is over
                 if (x is PictureBox && x.Tag == "wall" || x.Tag == "ghost") {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds)) {
-                        pacman.Left = 0;
-                        pacman.Top = 25;
+                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds)) {
+                        pacmans[playerNumber].Left = 0;
+                        pacmans[playerNumber].Top = 25;
                         label2.Text = "GAME OVER";
                         label2.Visible = true;
                         timer1.Stop();
                     }
                 }
                 if (x is PictureBox && x.Tag == "coin") {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacman.Bounds)) {
+                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds)) {
                         this.Controls.Remove(x);
                         score++;
                         //TODO check if all coins where "eaten"
                         if (score == total_coins) {
-                            //pacman.Left = 0;
-                            //pacman.Top = 25;
+                            //pacmans[playerNumber].Left = 0;
+                            //pacmans[playerNumber].Top = 25;
                             label2.Text = "GAME WON!";
                             label2.Visible = true;
                             timer1.Stop();
@@ -221,13 +223,7 @@ namespace pacman {
         {
             switch(Message)
             {
-                case "START":
-                    gameRunning = true;
-                    SetTextBox("Session full, game is starting!");
-                    addNewPlayer(int.Parse(auxMessage));
-                    break;
                 case "NEWPLAYER":
-                    gameRunning = true;
                     SetTextBox("Player "+auxMessage+" joined the game.");
                     break;
                 default:
@@ -235,28 +231,33 @@ namespace pacman {
             }
         }
 
-        void eventProxy_PlayerInput(int playerNumber, string Message)
+        public void StartGame(int playerNumber, int numberOfPlayers)
         {
-            SetTextBox(Message);
+            this.playerNumber = playerNumber;
+            gameRunning = true;
+            addNewPlayers(numberOfPlayers);
+            SetTextBox("Session full, game is starting!");
         }
 
-        private void addNewPlayer(int numberOfPlayers)
+        private void addNewPlayers(int numberOfPlayers)
         {
-
-            for (int i = 1; i < numberOfPlayers; i++)
+            pacmans = new List<PictureBox>();
+            for (int i = 1; i <= numberOfPlayers; i++)
             {
                 PictureBox picture = new PictureBox
                 {
                     Name = "pacman"+i,
                     Size = new Size(33, 31),
-                    Location = new Point(8, 80),
+                    Location = new Point(8, i*40),
                     Image = Properties.Resources.Left,
                     Visible = true,
                     SizeMode = PictureBoxSizeMode.StretchImage
                 };
+                pacmans.Add(picture);
                 this.Controls.Add(picture);
             }
         }
+
         private void SetTextBox(string Message)
         {
             if (tbChat.InvokeRequired)
@@ -270,7 +271,8 @@ namespace pacman {
 
     }
 
-    delegate void DelAddMsg(string mensagem, string auxMessage);
+    delegate void DelGameEvent(string mensagem, string auxMessage);
+    delegate void StartGameEvent(int playerNumber, int numberOfPlayer);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
@@ -282,7 +284,12 @@ namespace pacman {
 
         public void GameEvent(string message, string auxMessage)
         {
-            form.Invoke(new DelAddMsg(form.GameEvent), message, auxMessage);
+            form.Invoke(new DelGameEvent(form.GameEvent), message, auxMessage);
+        }
+
+        public void StartGame(int playerNumber, int numberOfPlayers)
+        {
+            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, numberOfPlayers);
         }
     }
 }

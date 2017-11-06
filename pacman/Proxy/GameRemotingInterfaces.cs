@@ -13,7 +13,8 @@ namespace Proxy
         void RegisterClient(string NewClientPort);
 
         //TODO
-        //Create methods for Outputs (list of "pacmans" probably)
+        //Create methods for Input receiving
+        
     }
 
     //Client interface
@@ -21,8 +22,9 @@ namespace Proxy
     {
         //GameEvent method (Start Game, New Player, End Game, etc...)
         void GameEvent(string message, string auxMessage);
+        void StartGame(int playerNumber, int numberOfPlayers);
 
         //TODO
-        //Create methods for Input receiving
+        //Create methods for Outputs (list of "pacmans" probably)
     }
 }

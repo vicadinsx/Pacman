@@ -63,7 +63,7 @@ namespace Server
 
             if (clients.Count == MAX_NUMBER)
             {
-                ThreadStart ts = new ThreadStart(this.PublishGameStart);
+                ThreadStart ts = new ThreadStart(this.StartGame);
                 Thread t = new Thread(ts);
                 t.Start();
             }
@@ -89,9 +89,20 @@ namespace Server
             PublishGameEvent("NEWPLAYER", clients.Count.ToString());
         }
 
-        private void PublishGameStart()
+        public void StartGame()
         {
-            PublishGameEvent("START", clients.Count.ToString());
+            for (int i = 0; i < clients.Count; i++)
+            {
+                try
+                {
+                    ((IClient)clients[i]).StartGame(i, clients.Count);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                    clients.RemoveAt(i);
+                }
+            }
         }
     }
 }
