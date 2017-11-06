@@ -68,14 +68,14 @@ namespace Server
                 t.Start();
             }
         }
-
-        private void PublishNewPlayer()
+        
+        private void PublishGameEvent(string message, string auxMessage)
         {
             for (int i = 0; i < clients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).GameEvent("NEWPLAYER", clients.Count.ToString());
+                    ((IClient)clients[i]).GameEvent(message, auxMessage);
                 }
                 catch (Exception e)
                 {
@@ -84,21 +84,14 @@ namespace Server
                 }
             }
         }
+        private void PublishNewPlayer()
+        {
+            PublishGameEvent("NEWPLAYER", clients.Count.ToString());
+        }
 
         private void PublishGameStart()
         {
-            for (int i = 0; i < clients.Count; i++)
-            {
-                try
-                {
-                    ((IClient)clients[i]).GameEvent("START", clients.Count.ToString());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
-                    clients.RemoveAt(i);
-                }
-            }
+            PublishGameEvent("START", clients.Count.ToString());
         }
     }
 }
