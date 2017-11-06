@@ -6,6 +6,15 @@ using System.Threading.Tasks;
 
 namespace Proxy
 {
+    public enum Movement
+    {
+        UNDEFINED,
+        UP,
+        DOWN,
+        LEFT,
+        RIGHT
+    };
+
     //Server interface
     public interface IServer
     {
@@ -14,7 +23,7 @@ namespace Proxy
 
         //TODO
         //Create methods for Input receiving
-        
+        void RegisterMovement(int playerNumber, Movement movement);
     }
 
     //Client interface
@@ -26,5 +35,6 @@ namespace Proxy
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)
+        void DoMovements(Movement[] movements);
     }
 }

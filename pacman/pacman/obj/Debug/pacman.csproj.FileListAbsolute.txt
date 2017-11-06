@@ -15,6 +15,6 @@ C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.pdb
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.dll
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.pdb
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csprojResolveAssemblyReference.cache
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.Form1.resources
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.Properties.Resources.resources
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csproj.GenerateResource.Cache
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.FormClient.resources

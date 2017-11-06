@@ -28,6 +28,8 @@ namespace pacman {
         bool goleft;
         bool goright;
 
+        Movement currentMovement;
+
         int boardRight = 320;
         int boardBottom = 320;
         int boardLeft = 0;
@@ -98,22 +100,28 @@ namespace pacman {
             if (e.KeyCode == Keys.Left) {
                 goleft = true;
                 pacmans[playerNumber].Image = Properties.Resources.Left;
+                currentMovement = Movement.LEFT;
             }
             if (e.KeyCode == Keys.Right) {
                 goright = true;
                 pacmans[playerNumber].Image = Properties.Resources.Right;
+                currentMovement = Movement.RIGHT;
             }
             if (e.KeyCode == Keys.Up) {
                 goup = true;
                 pacmans[playerNumber].Image = Properties.Resources.Up;
+                currentMovement = Movement.UP;
             }
             if (e.KeyCode == Keys.Down) {
                 godown = true;
                 pacmans[playerNumber].Image = Properties.Resources.down;
+                currentMovement = Movement.DOWN;
             }
             if (e.KeyCode == Keys.Enter) {
                     tbMsg.Enabled = true; tbMsg.Focus();
                }
+
+            obj.RegisterMovement(playerNumber, currentMovement);
         }
 
         private void keyisup(object sender, KeyEventArgs e) {
@@ -131,10 +139,111 @@ namespace pacman {
             }
         }
 
+        public void doMovement(Movement movement, int playerNumber)
+        {
+            label1.Text = "Score: " + score;
+            if (!gameRunning) return;
+            //move player
+            if (movement == Movement.LEFT)
+            {
+                if (pacmans[playerNumber].Left > (boardLeft))
+                    pacmans[playerNumber].Left -= speed;
+
+                pacmans[playerNumber].Image = Properties.Resources.Left;
+            }
+            if (movement == Movement.RIGHT)
+            {
+                if (pacmans[playerNumber].Left < (boardRight))
+                    pacmans[playerNumber].Left += speed;
+
+                pacmans[playerNumber].Image = Properties.Resources.Right;
+            }
+            if (movement == Movement.UP)
+            {
+                if (pacmans[playerNumber].Top > (boardTop))
+                    pacmans[playerNumber].Top -= speed;
+
+                pacmans[playerNumber].Image = Properties.Resources.Up;
+            }
+            if (movement == Movement.DOWN)
+            {
+                if (pacmans[playerNumber].Top < (boardBottom))
+                    pacmans[playerNumber].Top += speed;
+
+                pacmans[playerNumber].Image = Properties.Resources.down;
+            }
+            //move ghosts
+            redGhost.Left += ghost1;
+            yellowGhost.Left += ghost2;
+
+            // if the red ghost hits the picture box 4 then wereverse the speed
+            if (redGhost.Bounds.IntersectsWith(pictureBox1.Bounds))
+                ghost1 = -ghost1;
+            // if the red ghost hits the picture box 3 we reverse the speed
+            else if (redGhost.Bounds.IntersectsWith(pictureBox2.Bounds))
+                ghost1 = -ghost1;
+            // if the yellow ghost hits the picture box 1 then wereverse the speed
+            if (yellowGhost.Bounds.IntersectsWith(pictureBox3.Bounds))
+                ghost2 = -ghost2;
+            // if the yellow chost hits the picture box 2 then wereverse the speed
+            else if (yellowGhost.Bounds.IntersectsWith(pictureBox4.Bounds))
+                ghost2 = -ghost2;
+            //moving ghosts and bumping with the walls end
+            //for loop to check walls, ghosts and points
+            foreach (Control x in this.Controls)
+            {
+                // checking if the player hits the wall or the ghost, then game is over
+                if (x is PictureBox && x.Tag == "wall" || x.Tag == "ghost")
+                {
+                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
+                    {
+                        pacmans[playerNumber].Left = 0;
+                        pacmans[playerNumber].Top = 25;
+                        label2.Text = "GAME OVER";
+                        label2.Visible = true;
+                        timer1.Stop();
+                    }
+                }
+                if (x is PictureBox && x.Tag == "coin")
+                {
+                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
+                    {
+                        this.Controls.Remove(x);
+                        score++;
+                        //TODO check if all coins where "eaten"
+                        if (score == total_coins)
+                        {
+                            //pacmans[playerNumber].Left = 0;
+                            //pacmans[playerNumber].Top = 25;
+                            label2.Text = "GAME WON!";
+                            label2.Visible = true;
+                            timer1.Stop();
+                        }
+                    }
+                }
+            }
+            pinkGhost.Left += ghost3x;
+            pinkGhost.Top += ghost3y;
+
+            if (pinkGhost.Left < boardLeft ||
+                pinkGhost.Left > boardRight ||
+                (pinkGhost.Bounds.IntersectsWith(pictureBox1.Bounds)) ||
+                (pinkGhost.Bounds.IntersectsWith(pictureBox2.Bounds)) ||
+                (pinkGhost.Bounds.IntersectsWith(pictureBox3.Bounds)) ||
+                (pinkGhost.Bounds.IntersectsWith(pictureBox4.Bounds)))
+            {
+                ghost3x = -ghost3x;
+            }
+            if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
+            {
+                ghost3y = -ghost3y;
+            }
+        }
+
         private void timer1_Tick(object sender, EventArgs e) {
             label1.Text = "Score: " + score;
 
-            if (!gameRunning) return;
+            return;
             //move player
             if (goleft) {
                 if (pacmans[playerNumber].Left > (boardLeft))
@@ -142,7 +251,7 @@ namespace pacman {
             }
             if (goright) {
                 if (pacmans[playerNumber].Left < (boardRight))
-                pacmans[playerNumber].Left += speed;
+                    pacmans[playerNumber].Left += speed;
             }
             if (goup) {
                 if (pacmans[playerNumber].Top > (boardTop))
@@ -273,6 +382,7 @@ namespace pacman {
 
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(int playerNumber, int numberOfPlayer);
+    delegate void GameMovement(Movement movement, int playerNumber);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
@@ -280,6 +390,14 @@ namespace pacman {
 
         public ClientServices()
         {
+        }
+
+        public void DoMovements(Movement[] movements)
+        {
+            for (int i = 0; i < movements.Length; i++)
+            {
+                form.Invoke(new GameMovement(form.doMovement), movements[i], i);
+            }
         }
 
         public void GameEvent(string message, string auxMessage)

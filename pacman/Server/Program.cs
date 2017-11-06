@@ -6,6 +6,7 @@ using System.Runtime.Remoting;
 using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
+using System.Timers;
 
 namespace Server
 {
@@ -42,10 +43,20 @@ namespace Server
     class GameServerServices : MarshalByRefObject, IServer
     {
         List<IClient> clients;
+        Movement[] currentMovements;
         private const int MAX_NUMBER = 2;
+        private const int MS_TIMER = 20;
+        System.Timers.Timer movementTimer;
+
         GameServerServices()
         {
-            clients = new List<IClient>();
+            clients = new List<IClient>(MAX_NUMBER);
+            currentMovements = new Movement[MAX_NUMBER];
+            movementTimer = new System.Timers.Timer(MS_TIMER);
+
+            movementTimer.Elapsed += RoundTimer;
+            movementTimer.AutoReset = true;
+            movementTimer.Enabled = true;
         }
 
 
@@ -55,17 +66,21 @@ namespace Server
             IClient newClient =
                 (IClient)Activator.GetObject(
                        typeof(IClient), "tcp://localhost:" + NewClientName + "/GameClient");
-            clients.Add(newClient);
 
-            ThreadStart tsNew = new ThreadStart(this.PublishNewPlayer);
-            Thread tNew = new Thread(tsNew);
-            tNew.Start();
-
-            if (clients.Count == MAX_NUMBER)
+            lock (clients)
             {
-                ThreadStart ts = new ThreadStart(this.StartGame);
-                Thread t = new Thread(ts);
-                t.Start();
+                clients.Add(newClient);
+
+                ThreadStart tsNew = new ThreadStart(this.PublishNewPlayer);
+                Thread tNew = new Thread(tsNew);
+                tNew.Start();
+
+                if (clients.Count == MAX_NUMBER)
+                {
+                    ThreadStart ts = new ThreadStart(this.StartGame);
+                    Thread t = new Thread(ts);
+                    t.Start();
+                }
             }
         }
         
@@ -101,6 +116,38 @@ namespace Server
                 {
                     Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
                     clients.RemoveAt(i);
+                }
+            }
+        }
+
+        public void RegisterMovement(int playerNumber, Movement movement)
+        {
+            lock (currentMovements)
+            {
+                currentMovements[playerNumber] = movement;
+            }
+        }
+
+        public void RoundTimer(Object source, ElapsedEventArgs e)
+        {
+            for (int i = 0; i < clients.Count; i++)
+            {
+                try
+                {
+                    ((IClient)clients[i]).DoMovements(currentMovements);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
+                    clients.RemoveAt(i);
+                }
+            }
+
+            lock (currentMovements)
+            {
+                for (int i = 0; i < currentMovements.Length; i++)
+                {
+                    currentMovements[i] = Movement.UNDEFINED;
                 }
             }
         }
