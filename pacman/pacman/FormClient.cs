@@ -15,6 +15,7 @@ namespace pacman {
     public partial class FormClient : Form {
 
         List<PictureBox> pacmans;
+        List<PictureBox> gameEnemies;
         IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
@@ -22,26 +23,8 @@ namespace pacman {
         private int playerNumber;
         bool gameRunning;
 
-        // direction player is moving in. Only one will be true
-
         Movement currentMovement;
-
-        int boardRight = 320;
-        int boardBottom = 320;
-        int boardLeft = 0;
-        int boardTop = 40;
-        //player speed
-        int speed = 5;
-
-        int score = 0; int total_coins = 61;
-
-        //ghost speed for the one direction ghosts
-        int ghost1 = 5;
-        int ghost2 = 5;
-        
-        //x and y directions for the bi-direccional pink ghost
-        int ghost3x = 5;
-        int ghost3y = 5;            
+        int score = 0;      
 
         public FormClient() {
             
@@ -160,83 +143,92 @@ namespace pacman {
                     break;
             }
         }
-        public void doMovement(PlayerGameObject movement, int playerNumber)
+
+        public void doEnemyMovement(IEnemy enemy, int enemyNumber)
+        {
+            gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
+            gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
+        }
+
+        public void doMovement(IPlayer movement, int playerNumber)
         {
             label1.Text = "Score: " + score;
             if (!gameRunning) return;
 
-            pacmans[playerNumber].Top = movement.y;
-            pacmans[playerNumber].Left = movement.x;
+            pacmans[playerNumber].Top = movement.GetY();
+            pacmans[playerNumber].Left = movement.GetX();
 
-            if(movement.movementChanged)
-                defineMovementImage(movement.direction, playerNumber);
+            if(movement.isMovementChanged())
+                defineMovementImage(movement.GetMovement(), playerNumber);
 
-            //move ghosts
-            redGhost.Left += ghost1;
-            yellowGhost.Left += ghost2;
+            //if (playerNumber != this.playerNumber) return;
+            ////move ghosts
+            //redGhost.Left += ghost1;
+            //yellowGhost.Left += ghost2;
 
-            // if the red ghost hits the picture box 4 then wereverse the speed
-            if (redGhost.Bounds.IntersectsWith(pictureBox1.Bounds))
-                ghost1 = -ghost1;
-            // if the red ghost hits the picture box 3 we reverse the speed
-            else if (redGhost.Bounds.IntersectsWith(pictureBox2.Bounds))
-                ghost1 = -ghost1;
-            // if the yellow ghost hits the picture box 1 then wereverse the speed
-            if (yellowGhost.Bounds.IntersectsWith(pictureBox3.Bounds))
-                ghost2 = -ghost2;
-            // if the yellow chost hits the picture box 2 then wereverse the speed
-            else if (yellowGhost.Bounds.IntersectsWith(pictureBox4.Bounds))
-                ghost2 = -ghost2;
-            //moving ghosts and bumping with the walls end
-            //for loop to check walls, ghosts and points
-            foreach (Control x in this.Controls)
-            {
-                // checking if the player hits the wall or the ghost, then game is over
-                if (x is PictureBox && x.Tag == "wall" || x.Tag == "ghost")
-                {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
-                    {
-                        pacmans[playerNumber].Left = 0;
-                        pacmans[playerNumber].Top = 25;
-                        label2.Text = "GAME OVER";
-                        label2.Visible = true;
-                        timer1.Stop();
-                    }
-                }
-                if (x is PictureBox && x.Tag == "coin")
-                {
-                    if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
-                    {
-                        this.Controls.Remove(x);
-                        score++;
-                        //TODO check if all coins where "eaten"
-                        if (score == total_coins)
-                        {
-                            //pacmans[playerNumber].Left = 0;
-                            //pacmans[playerNumber].Top = 25;
-                            label2.Text = "GAME WON!";
-                            label2.Visible = true;
-                            timer1.Stop();
-                        }
-                    }
-                }
-            }
-            pinkGhost.Left += ghost3x;
-            pinkGhost.Top += ghost3y;
+            //// if the red ghost hits the picture box 4 then wereverse the speed
+            //if (redGhost.Bounds.IntersectsWith(pictureBox1.Bounds))
+            //    ghost1 = -ghost1;
+            //// if the red ghost hits the picture box 3 we reverse the speed
+            //else if (redGhost.Bounds.IntersectsWith(pictureBox2.Bounds))
+            //    ghost1 = -ghost1;
+            //// if the yellow ghost hits the picture box 1 then wereverse the speed
+            //if (yellowGhost.Bounds.IntersectsWith(pictureBox3.Bounds))
+            //    ghost2 = -ghost2;
+            //// if the yellow chost hits the picture box 2 then wereverse the speed
+            //else if (yellowGhost.Bounds.IntersectsWith(pictureBox4.Bounds))
+            //    ghost2 = -ghost2;
 
-            if (pinkGhost.Left < boardLeft ||
-                pinkGhost.Left > boardRight ||
-                (pinkGhost.Bounds.IntersectsWith(pictureBox1.Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(pictureBox2.Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(pictureBox3.Bounds)) ||
-                (pinkGhost.Bounds.IntersectsWith(pictureBox4.Bounds)))
-            {
-                ghost3x = -ghost3x;
-            }
-            if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
-            {
-                ghost3y = -ghost3y;
-            }
+            ////moving ghosts and bumping with the walls end
+            ////for loop to check walls, ghosts and points
+            //foreach (Control x in this.Controls)
+            //{
+            //    // checking if the player hits the wall or the ghost, then game is over
+            //    if (x is PictureBox && x.Tag == "wall" || x.Tag == "ghost")
+            //    {
+            //        if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
+            //        {
+            //            pacmans[playerNumber].Left = 0;
+            //            pacmans[playerNumber].Top = 25;
+            //            label2.Text = "GAME OVER";
+            //            label2.Visible = true;
+            //            timer1.Stop();
+            //        }
+            //    }
+            //    if (x is PictureBox && x.Tag == "coin")
+            //    {
+            //        if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
+            //        {
+            //            this.Controls.Remove(x);
+            //            score++;
+            //            //TODO check if all coins where "eaten"
+            //            if (score == total_coins)
+            //            {
+            //                //pacmans[playerNumber].Left = 0;
+            //                //pacmans[playerNumber].Top = 25;
+            //                label2.Text = "GAME WON!";
+            //                label2.Visible = true;
+            //                timer1.Stop();
+            //            }
+            //        }
+            //    }
+            //}
+            //pinkGhost.Left += ghost3x;
+            //pinkGhost.Top += ghost3y;
+
+            //if (pinkGhost.Left < boardLeft ||
+            //    pinkGhost.Left > boardRight ||
+            //    (pinkGhost.Bounds.IntersectsWith(pictureBox1.Bounds)) ||
+            //    (pinkGhost.Bounds.IntersectsWith(pictureBox2.Bounds)) ||
+            //    (pinkGhost.Bounds.IntersectsWith(pictureBox3.Bounds)) ||
+            //    (pinkGhost.Bounds.IntersectsWith(pictureBox4.Bounds)))
+            //{
+            //    ghost3x = -ghost3x;
+            //}
+            //if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
+            //{
+            //    ghost3y = -ghost3y;
+            //}
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
@@ -258,15 +250,50 @@ namespace pacman {
             }
         }
 
-        public void StartGame(int playerNumber, PlayerGameObject[] players)
+        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies)
         {
             this.playerNumber = playerNumber;
             gameRunning = true;
             addNewPlayers(players);
+            addNewEnemies(enemies);
             SetTextBox("Session full, game is starting!");
         }
 
-        private void addNewPlayers(PlayerGameObject[] players)
+        private void addNewEnemies(IEnemy[] enemies)
+        {
+            gameEnemies = new List<PictureBox>();
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                PictureBox picture = new PictureBox
+                {
+                    Name = "enemy" + i,
+                    Size = new Size(enemies[i].GetSizeX(), enemies[i].GetSizeY()),
+                    Location = new Point(enemies[i].GetX(), enemies[i].GetY()),
+                    Image = getEnemyImage(enemies[i].GetEnemyType()),
+                    Visible = true,
+                    SizeMode = PictureBoxSizeMode.Zoom
+                };
+                gameEnemies.Add(picture);
+                this.Controls.Add(picture);
+            }
+        }
+
+        private Image getEnemyImage(EnemyType type)
+        {
+            switch(type)
+            {
+                case EnemyType.PINK:
+                    return Properties.Resources.pink_guy;
+                case EnemyType.RED:
+                    return Properties.Resources.red_guy;
+                case EnemyType.YELLOW:
+                    return Properties.Resources.yellow_guy;
+            }
+
+            return null;
+        }
+
+        private void addNewPlayers(IPlayer[] players)
         {
             pacmans = new List<PictureBox>();
             for (int i = 0; i < players.Length; i++)
@@ -274,8 +301,8 @@ namespace pacman {
                 PictureBox picture = new PictureBox
                 {
                     Name = "pacman"+i,
-                    Size = new Size(players[i].SIZE_X, players[i].SIZE_Y),
-                    Location = new Point(players[i].x, players[i].y),
+                    Size = new Size(players[i].GetSizeX(), players[i].GetSizeY()),
+                    Location = new Point(players[i].GetX(), players[i].GetY()),
                     Image = Properties.Resources.Left,
                     Visible = true,
                     SizeMode = PictureBoxSizeMode.StretchImage
@@ -299,8 +326,9 @@ namespace pacman {
     }
 
     delegate void DelGameEvent(string mensagem, string auxMessage);
-    delegate void StartGameEvent(int playerNumber, PlayerGameObject[] players);
-    delegate void GameMovement(PlayerGameObject movement, int playerNumber);
+    delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies);
+    delegate void PlayerMovement(IPlayer movement, int playerNumber);
+    delegate void EnemyMovement(IEnemy movement, int playerNumber);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
@@ -310,11 +338,16 @@ namespace pacman {
         {
         }
 
-        public void DoMovements(PlayerGameObject[] movements)
+        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies)
         {
             for (int i = 0; i < movements.Length; i++)
             {
-                form.Invoke(new GameMovement(form.doMovement), movements[i], i);
+                form.Invoke(new PlayerMovement(form.doMovement), movements[i], i);
+            }
+
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                form.Invoke(new EnemyMovement(form.doEnemyMovement), enemies[i], i);
             }
         }
 
@@ -323,9 +356,9 @@ namespace pacman {
             form.Invoke(new DelGameEvent(form.GameEvent), message, auxMessage);
         }
 
-        public void StartGame(int playerNumber, PlayerGameObject[] players)
+        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies)
         {
-            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players);
+            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies);
         }
     }
 }

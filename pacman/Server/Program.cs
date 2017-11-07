@@ -43,7 +43,11 @@ namespace Server
     class GameServerServices : MarshalByRefObject, IServer
     {
         List<IClient> clients;
-        PlayerGameObject[] currentMovements;
+
+        PlayerGameObject[] playerObjects;
+        UnmovableGameObject[] unmovableGameObjects;
+        EnemyGameObject[] enemyGameObjects;
+
         private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
         System.Timers.Timer movementTimer;
@@ -51,9 +55,21 @@ namespace Server
         GameServerServices()
         {
             clients = new List<IClient>(MAX_NUMBER);
-            currentMovements = new PlayerGameObject[MAX_NUMBER];
+            playerObjects = new PlayerGameObject[MAX_NUMBER];
+            createEnemies();
         }
 
+        private void createEnemies()
+        {
+            enemyGameObjects = new EnemyGameObject[3];
+
+            //RedGhost
+            enemyGameObjects[0] = new EnemyGameObject(5, 0, 240, 90, 40, 37, EnemyType.RED);
+            //YellowGhost
+            enemyGameObjects[1] = new EnemyGameObject(5, 0, 295, 336, 40, 37, EnemyType.YELLOW);
+            //PinkGhost
+            enemyGameObjects[2] = new EnemyGameObject(5, 5, 401, 89, 40, 37, EnemyType.PINK);
+        }
 
         public void RegisterClient(string NewClientName)
         {
@@ -104,14 +120,14 @@ namespace Server
 
             for (int i = 0; i < MAX_NUMBER; i++)
             {
-                currentMovements[i] = new PlayerGameObject(i);
+                playerObjects[i] = new PlayerGameObject(i);
             }
 
             for (int i = 0; i < clients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).StartGame(i, currentMovements);
+                    ((IClient)clients[i]).StartGame(i, playerObjects, enemyGameObjects);
                 }
                 catch (Exception e)
                 {
@@ -129,23 +145,23 @@ namespace Server
 
         public void RegisterMovement(int playerNumber, Movement movement)
         {
-            lock (currentMovements)
+            lock (playerObjects)
             {
                 if(movement == Movement.UP)
                 {
-                    currentMovements[playerNumber].goup = true;
+                    playerObjects[playerNumber].goup = true;
                 }
                 if (movement == Movement.DOWN)
                 {
-                    currentMovements[playerNumber].godown = true;
+                    playerObjects[playerNumber].godown = true;
                 }
                 if (movement == Movement.LEFT)
                 {
-                    currentMovements[playerNumber].goleft = true;
+                    playerObjects[playerNumber].goleft = true;
                 }
                 if (movement == Movement.RIGHT)
                 {
-                    currentMovements[playerNumber].goright = true;
+                    playerObjects[playerNumber].goright = true;
                 }
 
             }
@@ -153,23 +169,23 @@ namespace Server
 
         public void UnRegisterMovement(int playerNumber, Movement movement)
         {
-            lock (currentMovements)
+            lock (playerObjects)
             {
                 if (movement == Movement.UP)
                 {
-                    currentMovements[playerNumber].goup = false;
+                    playerObjects[playerNumber].goup = false;
                 }
                 if (movement == Movement.DOWN)
                 {
-                    currentMovements[playerNumber].godown = false;
+                    playerObjects[playerNumber].godown = false;
                 }
                 if (movement == Movement.LEFT)
                 {
-                    currentMovements[playerNumber].goleft = false;
+                    playerObjects[playerNumber].goleft = false;
                 }
                 if (movement == Movement.RIGHT)
                 {
-                    currentMovements[playerNumber].goright = false;
+                    playerObjects[playerNumber].goright = false;
                 }
 
             }
@@ -177,16 +193,16 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
-            for (int i = 0; i < currentMovements.Length; i++)
+            for (int i = 0; i < playerObjects.Length; i++)
             {
-                currentMovements[i].updatePosition();
+                playerObjects[i].updatePosition();
             }
 
             for (int i = 0; i < clients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).DoMovements(currentMovements);
+                    ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects);
                 }
                 catch (Exception ex)
                 {

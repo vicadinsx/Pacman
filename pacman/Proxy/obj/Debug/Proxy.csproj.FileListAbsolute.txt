@@ -2,4 +2,3 @@ C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Proxy\bin\Debug\Proxy.dll
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Proxy\bin\Debug\Proxy.pdb
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Proxy\obj\Debug\Proxy.dll
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Proxy\obj\Debug\Proxy.pdb
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Proxy\obj\Debug\Proxy.csprojResolveAssemblyReference.cache
