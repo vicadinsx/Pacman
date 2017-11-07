@@ -142,39 +142,35 @@ namespace pacman {
             obj.UnRegisterMovement(playerNumber, currentMovement);
         }
 
+        private void defineMovementImage(Movement direction, int playerNumber)
+        {
+            switch (direction)
+            {
+                case Movement.DOWN:
+                    pacmans[playerNumber].Image = Properties.Resources.down;
+                    break;
+                case Movement.UP:
+                    pacmans[playerNumber].Image = Properties.Resources.Up;
+                    break;
+                case Movement.LEFT:
+                    pacmans[playerNumber].Image = Properties.Resources.Left;
+                    break;
+                case Movement.RIGHT:
+                    pacmans[playerNumber].Image = Properties.Resources.Right;
+                    break;
+            }
+        }
         public void doMovement(PlayerGameObject movement, int playerNumber)
         {
             label1.Text = "Score: " + score;
             if (!gameRunning) return;
-            //move player
-            if (movement.goleft)
-            {
-                if (pacmans[playerNumber].Left > (boardLeft))
-                    pacmans[playerNumber].Left -= speed;
 
-                pacmans[playerNumber].Image = Properties.Resources.Left;
-            }
-            if (movement.goright)
-            {
-                if (pacmans[playerNumber].Left < (boardRight))
-                    pacmans[playerNumber].Left += speed;
+            pacmans[playerNumber].Top = movement.y;
+            pacmans[playerNumber].Left = movement.x;
 
-                pacmans[playerNumber].Image = Properties.Resources.Right;
-            }
-            if (movement.goup)
-            {
-                if (pacmans[playerNumber].Top > (boardTop))
-                    pacmans[playerNumber].Top -= speed;
+            if(movement.movementChanged)
+                defineMovementImage(movement.direction, playerNumber);
 
-                pacmans[playerNumber].Image = Properties.Resources.Up;
-            }
-            if (movement.godown)
-            {
-                if (pacmans[playerNumber].Top < (boardBottom))
-                    pacmans[playerNumber].Top += speed;
-
-                pacmans[playerNumber].Image = Properties.Resources.down;
-            }
             //move ghosts
             redGhost.Left += ghost1;
             yellowGhost.Left += ghost2;
@@ -262,24 +258,24 @@ namespace pacman {
             }
         }
 
-        public void StartGame(int playerNumber, int numberOfPlayers)
+        public void StartGame(int playerNumber, PlayerGameObject[] players)
         {
             this.playerNumber = playerNumber;
             gameRunning = true;
-            addNewPlayers(numberOfPlayers);
+            addNewPlayers(players);
             SetTextBox("Session full, game is starting!");
         }
 
-        private void addNewPlayers(int numberOfPlayers)
+        private void addNewPlayers(PlayerGameObject[] players)
         {
             pacmans = new List<PictureBox>();
-            for (int i = 1; i <= numberOfPlayers; i++)
+            for (int i = 0; i < players.Length; i++)
             {
                 PictureBox picture = new PictureBox
                 {
                     Name = "pacman"+i,
-                    Size = new Size(33, 31),
-                    Location = new Point(8, i*40),
+                    Size = new Size(players[i].SIZE_X, players[i].SIZE_Y),
+                    Location = new Point(players[i].x, players[i].y),
                     Image = Properties.Resources.Left,
                     Visible = true,
                     SizeMode = PictureBoxSizeMode.StretchImage
@@ -303,7 +299,7 @@ namespace pacman {
     }
 
     delegate void DelGameEvent(string mensagem, string auxMessage);
-    delegate void StartGameEvent(int playerNumber, int numberOfPlayer);
+    delegate void StartGameEvent(int playerNumber, PlayerGameObject[] players);
     delegate void GameMovement(PlayerGameObject movement, int playerNumber);
 
     public class ClientServices : MarshalByRefObject, IClient
@@ -327,9 +323,9 @@ namespace pacman {
             form.Invoke(new DelGameEvent(form.GameEvent), message, auxMessage);
         }
 
-        public void StartGame(int playerNumber, int numberOfPlayers)
+        public void StartGame(int playerNumber, PlayerGameObject[] players)
         {
-            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, numberOfPlayers);
+            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players);
         }
     }
 }

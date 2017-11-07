@@ -52,17 +52,6 @@ namespace Server
         {
             clients = new List<IClient>(MAX_NUMBER);
             currentMovements = new PlayerGameObject[MAX_NUMBER];
-
-            for(int i=0; i< MAX_NUMBER; i++)
-            {
-                currentMovements[i] = new PlayerGameObject();
-            }
-
-            movementTimer = new System.Timers.Timer(MS_TIMER);
-
-            movementTimer.Elapsed += RoundTimer;
-            movementTimer.AutoReset = true;
-            movementTimer.Enabled = true;
         }
 
 
@@ -112,11 +101,17 @@ namespace Server
 
         public void StartGame()
         {
+
+            for (int i = 0; i < MAX_NUMBER; i++)
+            {
+                currentMovements[i] = new PlayerGameObject(i);
+            }
+
             for (int i = 0; i < clients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).StartGame(i, clients.Count);
+                    ((IClient)clients[i]).StartGame(i, currentMovements);
                 }
                 catch (Exception e)
                 {
@@ -124,6 +119,12 @@ namespace Server
                     clients.RemoveAt(i);
                 }
             }
+
+            movementTimer = new System.Timers.Timer(MS_TIMER);
+
+            movementTimer.Elapsed += RoundTimer;
+            movementTimer.AutoReset = true;
+            movementTimer.Enabled = true;
         }
 
         public void RegisterMovement(int playerNumber, Movement movement)
@@ -176,6 +177,11 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
+            for (int i = 0; i < currentMovements.Length; i++)
+            {
+                currentMovements[i].updatePosition();
+            }
+
             for (int i = 0; i < clients.Count; i++)
             {
                 try
