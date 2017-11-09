@@ -16,6 +16,7 @@ namespace pacman {
 
         List<PictureBox> pacmans;
         List<PictureBox> gameEnemies;
+        List<PictureBox> unmovableObjects;
         IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
@@ -250,13 +251,33 @@ namespace pacman {
             }
         }
 
-        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies)
+        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
         {
             this.playerNumber = playerNumber;
             gameRunning = true;
             addNewPlayers(players);
             addNewEnemies(enemies);
+            addUnmovableObjects(unmovableGameObjects);
             SetTextBox("Session full, game is starting!");
+        }
+
+        private void addUnmovableObjects(IUnmovable[] unmovableGameObjects)
+        {
+            unmovableObjects = new List<PictureBox>();
+            for (int i = 0; i < unmovableGameObjects.Length; i++)
+            {
+                PictureBox picture = new PictureBox
+                {
+                    Name = "unmovableObject" + i,
+                    Size = new Size(unmovableGameObjects[i].GetSizeX(), unmovableGameObjects[i].GetSizeY()),
+                    Location = new Point(unmovableGameObjects[i].GetX(), unmovableGameObjects[i].GetY()),
+                    BackColor = unmovableGameObjects[i].getColor(),
+                    Visible = true,
+                    SizeMode = PictureBoxSizeMode.Normal
+                };
+                unmovableObjects.Add(picture);
+                this.Controls.Add(picture);
+            }
         }
 
         private void addNewEnemies(IEnemy[] enemies)
@@ -326,7 +347,7 @@ namespace pacman {
     }
 
     delegate void DelGameEvent(string mensagem, string auxMessage);
-    delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies);
+    delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
     delegate void EnemyMovement(IEnemy movement, int playerNumber);
 
@@ -356,9 +377,9 @@ namespace pacman {
             form.Invoke(new DelGameEvent(form.GameEvent), message, auxMessage);
         }
 
-        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies)
+        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
-            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies);
+            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies, unmovableObjects);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Drawing;
 
 namespace Proxy
 {
@@ -50,6 +51,7 @@ namespace Proxy
         int GetSizeY();
         int GetSizeX();
         bool isVisible();
+        Color getColor();
         UnmovableType GetEnemyType();
     }
 
@@ -71,7 +73,7 @@ namespace Proxy
     {
         //GameEvent method (Start Game, New Player, End Game, etc...)
         void GameEvent(string message, string auxMessage);
-        void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies);
+        void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)

@@ -48,7 +48,7 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
-        private const int MAX_NUMBER = 2;
+        private const int MAX_NUMBER = 1;
         private const int MS_TIMER = 30;
         System.Timers.Timer movementTimer;
 
@@ -57,6 +57,7 @@ namespace Server
             clients = new List<IClient>(MAX_NUMBER);
             playerObjects = new PlayerGameObject[MAX_NUMBER];
             createEnemies();
+            createUnmovableObjects();
         }
 
         private void createEnemies()
@@ -66,9 +67,26 @@ namespace Server
             //RedGhost
             enemyGameObjects[0] = new EnemyGameObject(5, 0, 240, 90, 40, 37, EnemyType.RED);
             //YellowGhost
-            enemyGameObjects[1] = new EnemyGameObject(5, 0, 295, 336, 40, 37, EnemyType.YELLOW);
+            enemyGameObjects[1] = new EnemyGameObject(5, 0, 290, 336, 40, 37, EnemyType.YELLOW);
             //PinkGhost
-            enemyGameObjects[2] = new EnemyGameObject(5, 5, 401, 89, 40, 37, EnemyType.PINK);
+            enemyGameObjects[2] = new EnemyGameObject(5, 5, 370, 89, 40, 37, EnemyType.PINK);
+        }
+
+        private void createUnmovableObjects()
+        {
+            unmovableGameObjects = new UnmovableGameObject[4];
+
+            //Wall up-left
+            unmovableGameObjects[0] = new UnmovableGameObject(85, 35, 20, 117,true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+
+            //Wall down-left
+            unmovableGameObjects[1] = new UnmovableGameObject(125, 230, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+
+            //Wall up-right
+            unmovableGameObjects[2] = new UnmovableGameObject(245, 35, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+
+            //Wall down-right
+            unmovableGameObjects[3] = new UnmovableGameObject(290, 230, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
         }
 
         public void RegisterClient(string NewClientName)
@@ -127,7 +145,7 @@ namespace Server
             {
                 try
                 {
-                    ((IClient)clients[i]).StartGame(i, playerObjects, enemyGameObjects);
+                    ((IClient)clients[i]).StartGame(i, playerObjects, enemyGameObjects, unmovableGameObjects);
                 }
                 catch (Exception e)
                 {

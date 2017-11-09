@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Proxy
 {
     [Serializable]
-    public class UnmovableGameObject
+    public class UnmovableGameObject : IUnmovable
     {
         public Color color;
         public UnmovableType type;
@@ -23,7 +23,7 @@ namespace Proxy
 
         private Rectangle rectangle;
 
-        UnmovableGameObject(int _x, int _y, int _sizeY, int _sizeX, bool _isVisible, UnmovableType _type, Color _color)
+        public UnmovableGameObject(int _x, int _y, int _sizeX, int _sizeY, bool _isVisible, UnmovableType _type, Color _color)
         {
             x = _x;
             y = _y;
@@ -34,6 +34,41 @@ namespace Proxy
             color = _color;
 
             rectangle = new Rectangle(x, y, sizeX, sizeY);
+        }
+
+        public int GetY()
+        {
+            return y;
+        }
+
+        public int GetX()
+        {
+            return x;
+        }
+
+        public int GetSizeY()
+        {
+            return sizeY;
+        }
+
+        public int GetSizeX()
+        {
+            return sizeX;
+        }
+
+        bool IUnmovable.isVisible()
+        {
+            return isVisible;
+        }
+
+        public UnmovableType GetEnemyType()
+        {
+            return type;
+        }
+
+        public Color getColor()
+        {
+            return color;
         }
     }
 }
