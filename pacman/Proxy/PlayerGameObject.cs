@@ -29,6 +29,8 @@ namespace Proxy
         public int x;
         public int y;
 
+        public bool isDead;
+
         public Movement direction;
 
         public PlayerGameObject(int playerNumber)
@@ -38,6 +40,7 @@ namespace Proxy
             score = 0;
 
             rectangle = new Rectangle(x, y, SIZE_X, SIZE_Y);
+            isDead = false;
         }
 
         public void updatePosition()
@@ -77,11 +80,14 @@ namespace Proxy
                 movementChanged = false;
                 return;
             }
+            rectangle.X = x;
+            rectangle.Y = y;
 
             movementChanged = true;
             direction = newDirection;
         }
 
+        
         public int GetY()
         {
             return y;
@@ -110,6 +116,16 @@ namespace Proxy
         public bool isMovementChanged()
         {
             return movementChanged;
+        }
+
+        public Rectangle getRectangle()
+        {
+            return rectangle;
+        }
+
+        public bool isPlayerDead()
+        {
+            return isDead;
         }
     }
 }

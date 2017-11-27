@@ -162,74 +162,11 @@ namespace pacman {
             if(movement.isMovementChanged())
                 defineMovementImage(movement.GetMovement(), playerNumber);
 
-            //if (playerNumber != this.playerNumber) return;
-            ////move ghosts
-            //redGhost.Left += ghost1;
-            //yellowGhost.Left += ghost2;
-
-            //// if the red ghost hits the picture box 4 then wereverse the speed
-            //if (redGhost.Bounds.IntersectsWith(pictureBox1.Bounds))
-            //    ghost1 = -ghost1;
-            //// if the red ghost hits the picture box 3 we reverse the speed
-            //else if (redGhost.Bounds.IntersectsWith(pictureBox2.Bounds))
-            //    ghost1 = -ghost1;
-            //// if the yellow ghost hits the picture box 1 then wereverse the speed
-            //if (yellowGhost.Bounds.IntersectsWith(pictureBox3.Bounds))
-            //    ghost2 = -ghost2;
-            //// if the yellow chost hits the picture box 2 then wereverse the speed
-            //else if (yellowGhost.Bounds.IntersectsWith(pictureBox4.Bounds))
-            //    ghost2 = -ghost2;
-
-            ////moving ghosts and bumping with the walls end
-            ////for loop to check walls, ghosts and points
-            //foreach (Control x in this.Controls)
-            //{
-            //    // checking if the player hits the wall or the ghost, then game is over
-            //    if (x is PictureBox && x.Tag == "wall" || x.Tag == "ghost")
-            //    {
-            //        if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
-            //        {
-            //            pacmans[playerNumber].Left = 0;
-            //            pacmans[playerNumber].Top = 25;
-            //            label2.Text = "GAME OVER";
-            //            label2.Visible = true;
-            //            timer1.Stop();
-            //        }
-            //    }
-            //    if (x is PictureBox && x.Tag == "coin")
-            //    {
-            //        if (((PictureBox)x).Bounds.IntersectsWith(pacmans[playerNumber].Bounds))
-            //        {
-            //            this.Controls.Remove(x);
-            //            score++;
-            //            //TODO check if all coins where "eaten"
-            //            if (score == total_coins)
-            //            {
-            //                //pacmans[playerNumber].Left = 0;
-            //                //pacmans[playerNumber].Top = 25;
-            //                label2.Text = "GAME WON!";
-            //                label2.Visible = true;
-            //                timer1.Stop();
-            //            }
-            //        }
-            //    }
-            //}
-            //pinkGhost.Left += ghost3x;
-            //pinkGhost.Top += ghost3y;
-
-            //if (pinkGhost.Left < boardLeft ||
-            //    pinkGhost.Left > boardRight ||
-            //    (pinkGhost.Bounds.IntersectsWith(pictureBox1.Bounds)) ||
-            //    (pinkGhost.Bounds.IntersectsWith(pictureBox2.Bounds)) ||
-            //    (pinkGhost.Bounds.IntersectsWith(pictureBox3.Bounds)) ||
-            //    (pinkGhost.Bounds.IntersectsWith(pictureBox4.Bounds)))
-            //{
-            //    ghost3x = -ghost3x;
-            //}
-            //if (pinkGhost.Top < boardTop || pinkGhost.Top + pinkGhost.Height > boardBottom - 2)
-            //{
-            //    ghost3y = -ghost3y;
-            //}
+            if(playerNumber == this.playerNumber && movement.isPlayerDead())
+            {
+                label2.Text = "You are dead";
+                label2.Visible = true;
+            }
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
@@ -266,15 +203,31 @@ namespace pacman {
             unmovableObjects = new List<PictureBox>();
             for (int i = 0; i < unmovableGameObjects.Length; i++)
             {
-                PictureBox picture = new PictureBox
+                PictureBox picture = null;
+                if (unmovableGameObjects[i].GetEnemyType() == UnmovableType.WALL)
                 {
-                    Name = "unmovableObject" + i,
-                    Size = new Size(unmovableGameObjects[i].GetSizeX(), unmovableGameObjects[i].GetSizeY()),
-                    Location = new Point(unmovableGameObjects[i].GetX(), unmovableGameObjects[i].GetY()),
-                    BackColor = unmovableGameObjects[i].getColor(),
-                    Visible = true,
-                    SizeMode = PictureBoxSizeMode.Normal
-                };
+                    picture = new PictureBox
+                    {
+                        Name = "unmovableObject" + i,
+                        Size = new Size(unmovableGameObjects[i].GetSizeX(), unmovableGameObjects[i].GetSizeY()),
+                        Location = new Point(unmovableGameObjects[i].GetX(), unmovableGameObjects[i].GetY()),
+                        BackColor = unmovableGameObjects[i].getColor(),
+                        Visible = true,
+                        SizeMode = PictureBoxSizeMode.Normal
+                    };
+                }
+                else
+                {
+                    picture = new PictureBox
+                    {
+                        Name = "unmovableObject" + i,
+                        Size = new Size(unmovableGameObjects[i].GetSizeX(), unmovableGameObjects[i].GetSizeY()),
+                        Location = new Point(unmovableGameObjects[i].GetX(), unmovableGameObjects[i].GetY()),
+                        Image = getUnmovableImage(unmovableGameObjects[i].GetEnemyType()),
+                        Visible = true,
+                        SizeMode = PictureBoxSizeMode.StretchImage
+                    };
+                }
                 unmovableObjects.Add(picture);
                 this.Controls.Add(picture);
             }
@@ -297,6 +250,19 @@ namespace pacman {
                 gameEnemies.Add(picture);
                 this.Controls.Add(picture);
             }
+        }
+
+        private Image getUnmovableImage(UnmovableType type)
+        {
+            switch (type)
+            {
+                case UnmovableType.COIN:
+                    return Properties.Resources.atc_coin;
+                case UnmovableType.WALL:
+                    return null;
+            }
+
+            return null;
         }
 
         private Image getEnemyImage(EnemyType type)

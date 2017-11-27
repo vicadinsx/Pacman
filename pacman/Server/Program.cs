@@ -97,12 +97,17 @@ namespace Server
             for (int i = 0; i < enemyGameObjects.Length; i++)
             {
                 enemyGameObjects[i].UpdateObject();
+                for (int j = 0; j < playerObjects.Length; j++)
+                {
+                    if (enemyGameObjects[i].IntersectsWith(playerObjects[j].getRectangle()))
+                        playerObjects[j].isDead = true;
+                }
             }
         }
 
         private void createUnmovableObjects()
         {
-            unmovableGameObjects = new UnmovableGameObject[4];
+            unmovableGameObjects = new UnmovableGameObject[77];
 
             //Wall up-left
             unmovableGameObjects[0] = new UnmovableGameObject(85, 25, 20, 117,true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
@@ -115,6 +120,15 @@ namespace Server
 
             //Wall down-right
             unmovableGameObjects[3] = new UnmovableGameObject(290, 240, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+
+            int line = 1;
+            for(int i=0; i<73; i++)
+            {
+                unmovableGameObjects[i+4] = new UnmovableGameObject((42*i) % 378, line*40, 20, 20, true, UnmovableType.COIN, System.Drawing.Color.Yellow);
+                if (i!= 0 && i % 9 == 0)
+                    line++;
+            }
+
         }
 
         public void RegisterClient(string NewClientName)
@@ -191,6 +205,9 @@ namespace Server
 
         public void RegisterMovement(int playerNumber, Movement movement)
         {
+            if (playerObjects[playerNumber].isDead)
+                return;
+
             lock (playerObjects)
             {
                 if(movement == Movement.UP)

@@ -33,6 +33,7 @@ namespace Proxy
         int GetSizeX();
         Movement GetMovement();
         bool isMovementChanged();
+        bool isPlayerDead();
     }
 
     public interface IEnemy
