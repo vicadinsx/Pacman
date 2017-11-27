@@ -10,8 +10,8 @@ namespace Proxy
     [Serializable]
     public class EnemyGameObject : IEnemy
     {
-        private int enemyXSpeed;
-        private int enemyYSpeed;
+        public int enemyXSpeed;
+        public int enemyYSpeed;
 
         public int x;
         public int y;
@@ -58,6 +58,31 @@ namespace Proxy
         public EnemyType GetEnemyType()
         {
             return enemyType;
+        }
+
+        public bool IntersectsWith(int _x, int _y, int _sizeX, int _sizeY)
+        {
+            if (x > _x && x - sizeX/2 < _x + _sizeX / 2)
+                return true;
+
+            if (x < _x && x + sizeX/2 > _x - _sizeX / 2)
+                return true;
+
+
+            return false;
+        }
+
+        public bool IntersectsWith(Rectangle theObject)
+        {
+            return rectangle.IntersectsWith(theObject);
+        }
+
+        public void UpdateObject()
+        {
+            x += enemyXSpeed;
+            y += enemyYSpeed;
+            rectangle.X = x;
+            rectangle.Y = y;
         }
     }
 }

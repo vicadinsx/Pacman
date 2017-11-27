@@ -65,11 +65,39 @@ namespace Server
             enemyGameObjects = new EnemyGameObject[3];
 
             //RedGhost
-            enemyGameObjects[0] = new EnemyGameObject(5, 0, 240, 90, 40, 37, EnemyType.RED);
+            enemyGameObjects[0] = new EnemyGameObject(5, 0, 220, 110, 40, 37, EnemyType.RED);
             //YellowGhost
-            enemyGameObjects[1] = new EnemyGameObject(5, 0, 290, 336, 40, 37, EnemyType.YELLOW);
+            enemyGameObjects[1] = new EnemyGameObject(5, 0, 270, 336, 40, 37, EnemyType.YELLOW);
             //PinkGhost
             enemyGameObjects[2] = new EnemyGameObject(5, 5, 370, 89, 40, 37, EnemyType.PINK);
+        }
+
+        private void updateGame()
+        {
+            if (enemyGameObjects[0].IntersectsWith(unmovableGameObjects[0].getRectangle()) ||
+                enemyGameObjects[0].IntersectsWith(unmovableGameObjects[2].getRectangle()))
+                enemyGameObjects[0].enemyXSpeed = -enemyGameObjects[0].enemyXSpeed;
+
+            if (enemyGameObjects[1].IntersectsWith(unmovableGameObjects[1].getRectangle()) ||
+                enemyGameObjects[1].IntersectsWith(unmovableGameObjects[3].getRectangle()))
+                    enemyGameObjects[1].enemyXSpeed = -enemyGameObjects[1].enemyXSpeed;
+
+            if (enemyGameObjects[2].IntersectsWith(unmovableGameObjects[0].getRectangle()) ||
+                enemyGameObjects[2].IntersectsWith(unmovableGameObjects[1].getRectangle()) ||
+                enemyGameObjects[2].IntersectsWith(unmovableGameObjects[2].getRectangle()) ||
+                enemyGameObjects[2].IntersectsWith(unmovableGameObjects[3].getRectangle()) ||
+                enemyGameObjects[2].x > 370 || enemyGameObjects[2].x < 5)
+                    enemyGameObjects[2].enemyXSpeed = -enemyGameObjects[2].enemyXSpeed;
+
+            if(enemyGameObjects[2].y < 60 || enemyGameObjects[2].y > 360)
+            {
+                enemyGameObjects[2].enemyYSpeed = -enemyGameObjects[2].enemyYSpeed;
+            }
+
+            for (int i = 0; i < enemyGameObjects.Length; i++)
+            {
+                enemyGameObjects[i].UpdateObject();
+            }
         }
 
         private void createUnmovableObjects()
@@ -77,16 +105,16 @@ namespace Server
             unmovableGameObjects = new UnmovableGameObject[4];
 
             //Wall up-left
-            unmovableGameObjects[0] = new UnmovableGameObject(85, 35, 20, 117,true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+            unmovableGameObjects[0] = new UnmovableGameObject(85, 25, 20, 117,true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
 
             //Wall down-left
-            unmovableGameObjects[1] = new UnmovableGameObject(125, 230, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+            unmovableGameObjects[1] = new UnmovableGameObject(125, 240, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
 
             //Wall up-right
-            unmovableGameObjects[2] = new UnmovableGameObject(245, 35, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+            unmovableGameObjects[2] = new UnmovableGameObject(245, 25, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
 
             //Wall down-right
-            unmovableGameObjects[3] = new UnmovableGameObject(290, 230, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
+            unmovableGameObjects[3] = new UnmovableGameObject(290, 240, 20, 117, true, UnmovableType.WALL, System.Drawing.Color.MidnightBlue);
         }
 
         public void RegisterClient(string NewClientName)
@@ -215,6 +243,8 @@ namespace Server
             {
                 playerObjects[i].updatePosition();
             }
+
+            updateGame();
 
             for (int i = 0; i < clients.Count; i++)
             {

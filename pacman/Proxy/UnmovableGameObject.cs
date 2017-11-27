@@ -33,7 +33,7 @@ namespace Proxy
             type = _type;
             color = _color;
 
-            rectangle = new Rectangle(x, y, sizeX, sizeY);
+            rectangle = new Rectangle(x+40, y+20, sizeX, sizeY);
         }
 
         public int GetY()
@@ -69,6 +69,11 @@ namespace Proxy
         public Color getColor()
         {
             return color;
+        }
+
+        public Rectangle getRectangle()
+        {
+            return rectangle;
         }
     }
 }
