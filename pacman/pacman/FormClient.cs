@@ -74,6 +74,7 @@ namespace pacman {
             }
 
             tbChat.Text = "Connected! \r\n";
+            label1.Text = "Waiting for players...";
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -149,11 +150,31 @@ namespace pacman {
         {
             gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
             gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+            {
+                obj.PlayerKilled(playerNumber);
+            }
+        }
+        public void doUnmovableMovement(IUnmovable unmovable, int unmovableNumber)
+        {
+            unmovableObjects[unmovableNumber].Visible = unmovable.isVisible();
+            unmovableObjects[unmovableNumber].Top = unmovable.GetY();
+            unmovableObjects[unmovableNumber].Left = unmovable.GetX();
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.WALL)
+            {
+                obj.PlayerKilled(playerNumber);
+            }
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.COIN)
+            {
+                obj.GatheredCoin(playerNumber, unmovableNumber);
+            }
         }
 
         public void doMovement(IPlayer movement, int playerNumber)
         {
-            label1.Text = "Score: " + score;
             if (!gameRunning) return;
 
             pacmans[playerNumber].Top = movement.GetY();
@@ -167,6 +188,13 @@ namespace pacman {
                 label2.Text = "You are dead";
                 label2.Visible = true;
             }
+
+            if (playerNumber == this.playerNumber)
+            {
+                score = movement.getScore();
+            }
+
+            label1.Text = "Score: " + score;
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
@@ -182,6 +210,10 @@ namespace pacman {
             {
                 case "NEWPLAYER":
                     SetTextBox("Player "+auxMessage+" joined the game.");
+                    break;
+                case "GAMEOVER":
+                    label1.Text = auxMessage;
+                    label2.Visible = false;
                     break;
                 default:
                     return;
@@ -316,6 +348,7 @@ namespace pacman {
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
     delegate void EnemyMovement(IEnemy movement, int playerNumber);
+    delegate void UnmovableMovement(IUnmovable movement, int playerNumber);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
@@ -325,8 +358,9 @@ namespace pacman {
         {
         }
 
-        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies)
+        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
+            //TODO fazer isto tudo sem fors (fica mais sincrono)
             for (int i = 0; i < movements.Length; i++)
             {
                 form.Invoke(new PlayerMovement(form.doMovement), movements[i], i);
@@ -335,6 +369,11 @@ namespace pacman {
             for (int i = 0; i < enemies.Length; i++)
             {
                 form.Invoke(new EnemyMovement(form.doEnemyMovement), enemies[i], i);
+            }
+
+            for(int i=0; i < unmovableObjects.Length; i++)
+            {
+                form.Invoke(new UnmovableMovement(form.doUnmovableMovement), unmovableObjects[i], i);
             }
         }
 

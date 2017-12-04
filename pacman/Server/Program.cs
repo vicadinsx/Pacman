@@ -7,6 +7,7 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Timers;
+using System.Linq;
 
 namespace Server
 {
@@ -48,8 +49,11 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
-        private const int MAX_NUMBER = 1;
+        private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
+        private const int NUM_COINS = 60;
+        private bool gameRunning = false;
+
         System.Timers.Timer movementTimer;
 
         GameServerServices()
@@ -97,11 +101,15 @@ namespace Server
             for (int i = 0; i < enemyGameObjects.Length; i++)
             {
                 enemyGameObjects[i].UpdateObject();
-                for (int j = 0; j < playerObjects.Length; j++)
-                {
-                    if (enemyGameObjects[i].IntersectsWith(playerObjects[j].getRectangle()))
-                        playerObjects[j].isDead = true;
-                }
+            }
+        }
+
+        public void PlayerKilled(int playerNumber)
+        {
+            playerObjects[playerNumber].isDead = true;
+            if(playerObjects.Where(u => u.isPlayerDead()).Count() == MAX_NUMBER)
+            {
+                gameRunning = false;
             }
         }
 
@@ -177,6 +185,7 @@ namespace Server
 
         public void StartGame()
         {
+            gameRunning = true;
 
             for (int i = 0; i < MAX_NUMBER; i++)
             {
@@ -256,25 +265,58 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
-            for (int i = 0; i < playerObjects.Length; i++)
+            if (!gameRunning)
             {
-                playerObjects[i].updatePosition();
+                int playerNumber = 0;
+                int score = 0;
+                for(int i=0; i<playerObjects.Length; i++)
+                {
+                    if(playerObjects[i].getScore() > score)
+                    {
+                        score = playerObjects[i].getScore();
+                        playerNumber = i;
+                    }
+                }
+                PublishGameEvent("GAMEOVER", "The player "+ (playerNumber+1) +" won the game with "+score+" coins");
+            }
+            else
+            {
+                for (int i = 0; i < playerObjects.Length; i++)
+                {
+                    if (!playerObjects[i].isPlayerDead())
+                        playerObjects[i].updatePosition();
+                }
+
+                updateGame();
+
+                for (int i = 0; i < clients.Count; i++)
+                {
+                    try
+                    {
+                        ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
+                        clients.RemoveAt(i);
+                    }
+                }
+            }
+        }
+
+        public void GatheredCoin(int playerNumber, int coinNumber)
+        {
+            if (unmovableGameObjects[coinNumber].isVisible && unmovableGameObjects[coinNumber].GetEnemyType() == UnmovableType.COIN)
+            {
+                playerObjects[playerNumber].score++;
+                unmovableGameObjects[coinNumber].isVisible = false;
             }
 
-            updateGame();
-
-            for (int i = 0; i < clients.Count; i++)
+            if(unmovableGameObjects.Where(u => u.GetEnemyType() == UnmovableType.COIN && !u.isVisible).Count() == NUM_COINS)
             {
-                try
-                {
-                    ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
-                    clients.RemoveAt(i);
-                }
+                gameRunning = false;
             }
+
         }
     }
 }
