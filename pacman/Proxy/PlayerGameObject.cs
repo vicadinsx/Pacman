@@ -127,5 +127,10 @@ namespace Proxy
         {
             return isDead;
         }
+
+        public int getScore()
+        {
+            return score;
+        }
     }
 }

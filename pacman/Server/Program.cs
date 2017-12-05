@@ -7,6 +7,7 @@ using System.Runtime.Remoting.Channels;
 using System.Runtime.Remoting.Channels.Tcp;
 using System.Threading;
 using System.Timers;
+using System.Linq;
 
 namespace Server
 {
@@ -15,6 +16,7 @@ namespace Server
         [STAThread]
         static void Main(string[] args)
         {
+
             Hashtable props = new Hashtable();
             props["port"] = 8086;
             props["name"] = "GameServer";
@@ -49,6 +51,12 @@ namespace Server
 
         private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
+        private const int NUM_COINS = 60;
+        private bool gameRunning = false;
+
+        int playerNumber = 0;
+        int score = 0;
+
         System.Timers.Timer movementTimer;
 
         GameServerServices()
@@ -96,11 +104,16 @@ namespace Server
             for (int i = 0; i < enemyGameObjects.Length; i++)
             {
                 enemyGameObjects[i].UpdateObject();
-                for (int j = 0; j < playerObjects.Length; j++)
-                {
-                    if (enemyGameObjects[i].IntersectsWith(playerObjects[j].getRectangle()))
-                        playerObjects[j].isDead = true;
-                }
+            }
+        }
+
+        public void PlayerKilled(int playerNumber)
+        {
+            playerObjects[playerNumber].isDead = true;
+            if(playerObjects.Where(u => u.isPlayerDead()).Count() == MAX_NUMBER)
+            {
+                gameRunning = false;
+                GameOver();
             }
         }
 
@@ -147,6 +160,8 @@ namespace Server
 
                 if (clients.Count == MAX_NUMBER)
                 {
+                    createEnemies();
+                    createUnmovableObjects();
                     //enviar lista para os clientes 
                     for (int i = 0; i < clients.Count; i++)
                     {
@@ -187,8 +202,15 @@ namespace Server
             PublishGameEvent("NEWPLAYER", clients.Count.ToString());
         }
 
+        private void PublishGameOver()
+        {
+            PublishGameEvent("GAMEOVER", "The player " + (playerNumber + 1) + " won the game with " + score + " coins");
+            clients.Clear();
+        }
+
         public void StartGame()
         {
+            gameRunning = true;
 
             for (int i = 0; i < MAX_NUMBER; i++)
             {
@@ -268,9 +290,12 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
+            if (!gameRunning) return;
+
             for (int i = 0; i < playerObjects.Length; i++)
             {
-                playerObjects[i].updatePosition();
+                if (!playerObjects[i].isPlayerDead())
+                    playerObjects[i].updatePosition();
             }
 
             updateGame();
@@ -279,13 +304,46 @@ namespace Server
             {
                 try
                 {
-                    ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects);
+                    ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects, unmovableGameObjects);
                 }
                 catch (Exception ex)
                 {
                     Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
                     clients.RemoveAt(i);
                 }
+            }
+        }
+
+        public void GameOver()
+        {
+            movementTimer.Stop();
+            playerNumber = 0;
+            score = 0;
+            for (int i = 0; i < playerObjects.Length; i++)
+            {
+                if (playerObjects[i].getScore() > score)
+                {
+                    score = playerObjects[i].getScore();
+                    playerNumber = i;
+                }
+            }
+
+            ThreadStart ts = new ThreadStart(this.PublishGameOver);
+            Thread t = new Thread(ts);
+            t.Start();
+        }
+        public void GatheredCoin(int playerNumber, int coinNumber)
+        {
+            if (unmovableGameObjects[coinNumber].isVisible && unmovableGameObjects[coinNumber].GetEnemyType() == UnmovableType.COIN)
+            {
+                playerObjects[playerNumber].score++;
+                unmovableGameObjects[coinNumber].isVisible = false;
+            }
+
+            if (unmovableGameObjects.Where(u => u.GetEnemyType() == UnmovableType.COIN && !u.isVisible).Count() == NUM_COINS)
+            {
+                gameRunning = false;
+                GameOver();
             }
         }
     }

@@ -34,6 +34,8 @@ namespace Proxy
         Movement GetMovement();
         bool isMovementChanged();
         bool isPlayerDead();
+
+        int getScore();
     }
 
     public interface IEnemy
@@ -67,6 +69,10 @@ namespace Proxy
         void RegisterMovement(int playerNumber, Movement movement);
 
         void UnRegisterMovement(int playerNumber, Movement movement);
+
+        void PlayerKilled(int playerNumber);
+
+        void GatheredCoin(int playerNumber, int coinNumber);
     }
 
     //Client interface
@@ -78,7 +84,7 @@ namespace Proxy
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)
-        void UpdateGame(IPlayer[] movements, IEnemy[] enemies);
+        void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects);
         void UpdatePlayers(IClient[] client);
         void Message(string Message, string auxMessage);
     }

@@ -8,6 +8,7 @@ using System.Runtime.Remoting.Channels.Tcp;
 using System.Drawing;
 using System.Runtime.Remoting;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace pacman {
 
@@ -32,53 +33,14 @@ namespace pacman {
             
             InitializeComponent();
             label2.Visible = false;
-            gameRunning = false;
+			gameRunning = false;
             ActivePlayers = new List<IClient>();
 
-            ClientServices.form = this;
-
-            //Define client and server providers (full filter to be able to use events).  
-            clientProv = new BinaryClientFormatterSinkProvider();
-            serverProv = new BinaryServerFormatterSinkProvider();
-            serverProv.TypeFilterLevel =
-              System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
-
-            //Dummy props.
-            Hashtable props = new Hashtable();
-            props["name"] = "GameClient";
-            props["port"] = 0;
-
-            //Connect tcp channel with server and client provider settings.
-            TcpChannel channel = new TcpChannel(props, clientProv, serverProv);
-            ChannelServices.RegisterChannel(channel, false);
-
-            ClientServices servicos = new ClientServices();
-            RemotingServices.Marshal(servicos, "GameClient",
-                typeof(ClientServices));
-
-            //Activate class and get object.
-            obj = (IServer)Activator.GetObject(typeof(IServer),
-                string.Format("tcp://localhost:{0}/GameManagement", "8086"));
-
-            var channelData = (ChannelDataStore)channel.ChannelData;
-            var port = new Uri(channelData.ChannelUris[0]).Port;
-
-            try
-            {
-                //Register event.
-                obj.RegisterClient(port.ToString());
-            }
-            catch (SocketException)
-            {
-                tbChat.Text = "Could not locate server";
-                ChannelServices.UnregisterChannel(channel);
-                return;
-            }
-
-            tbChat.Text = "Connected! \r\n";
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
+            if (!gameRunning) return;
+
             if (e.KeyCode == Keys.Left) {
                 pacmans[playerNumber].Image = Properties.Resources.Left;
                 currentMovement = Movement.LEFT;
@@ -104,6 +66,9 @@ namespace pacman {
 
         private void keyisup(object sender, KeyEventArgs e)
         {
+            if (!gameRunning) return;
+
+
             if (e.KeyCode == Keys.Left)
             {
                 currentMovement = Movement.LEFT;
@@ -151,11 +116,31 @@ namespace pacman {
         {
             gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
             gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+            {
+                obj.PlayerKilled(playerNumber);
+            }
+        }
+        public void doUnmovableMovement(IUnmovable unmovable, int unmovableNumber)
+        {
+            unmovableObjects[unmovableNumber].Visible = unmovable.isVisible();
+            unmovableObjects[unmovableNumber].Top = unmovable.GetY();
+            unmovableObjects[unmovableNumber].Left = unmovable.GetX();
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.WALL)
+            {
+                obj.PlayerKilled(playerNumber);
+            }
+
+            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.COIN)
+            {
+                obj.GatheredCoin(playerNumber, unmovableNumber);
+            }
         }
 
         public void doMovement(IPlayer movement, int playerNumber)
         {
-            label1.Text = "Score: " + score;
             if (!gameRunning) return;
 
             pacmans[playerNumber].Top = movement.GetY();
@@ -169,6 +154,13 @@ namespace pacman {
                 label2.Text = "You are dead";
                 label2.Visible = true;
             }
+
+            if (playerNumber == this.playerNumber)
+            {
+                score = movement.getScore();
+            }
+
+            label1.Text = "Score: " + score;
         }
 
         private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
@@ -188,6 +180,12 @@ namespace pacman {
             {
                 case "NEWPLAYER":
                     SetTextBox("Player "+auxMessage+" joined the game.");
+                    break;
+                case "GAMEOVER":
+                    label1.Text = auxMessage;
+                    label2.Visible = false;
+                    gameRunning = false;
+                    JoinGame.Enabled = true;
                     break;
                 default:
                     return;
@@ -209,6 +207,7 @@ namespace pacman {
         public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
         {
             this.playerNumber = playerNumber;
+
             gameRunning = true;
             addNewPlayers(players);
             addNewEnemies(enemies);
@@ -246,6 +245,7 @@ namespace pacman {
                         SizeMode = PictureBoxSizeMode.StretchImage
                     };
                 }
+                this.Controls.RemoveByKey("unmovableObject" + i);
                 unmovableObjects.Add(picture);
                 this.Controls.Add(picture);
             }
@@ -265,6 +265,7 @@ namespace pacman {
                     Visible = true,
                     SizeMode = PictureBoxSizeMode.Zoom
                 };
+                this.Controls.RemoveByKey("enemy" + i);
                 gameEnemies.Add(picture);
                 this.Controls.Add(picture);
             }
@@ -312,6 +313,7 @@ namespace pacman {
                     Visible = true,
                     SizeMode = PictureBoxSizeMode.StretchImage
                 };
+                this.Controls.RemoveByKey("pacman" + i);
                 pacmans.Add(picture);
                 this.Controls.Add(picture);
             }
@@ -328,10 +330,65 @@ namespace pacman {
                 tbChat.AppendText(Message + "\r\n");
         }
 
-        internal void ActivePlayersUpdate(IClient[] players)
+		internal void ActivePlayersUpdate(IClient[] players)
+		{
+		            ActivePlayers.Clear();
+		            ActivePlayers.AddRange(players);
+		}
+        TcpChannel channel;
+        ChannelDataStore channelData;
+        int port;
+
+        private void JoinGame_Click(object sender, EventArgs e)
         {
-            ActivePlayers.Clear();
-            ActivePlayers.AddRange(players);
+            JoinGame.Enabled = false;
+            gameRunning = false;
+
+            if (obj == null)
+            {
+                ClientServices.form = this;
+
+                //Define client and server providers (full filter to be able to use events).  
+                clientProv = new BinaryClientFormatterSinkProvider();
+                serverProv = new BinaryServerFormatterSinkProvider();
+                serverProv.TypeFilterLevel =
+                  System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+
+                //Dummy props.
+                Hashtable props = new Hashtable();
+                props["name"] = "GameClient";
+                props["port"] = 0;
+
+                //Connect tcp channel with server and client provider settings.
+                channel = new TcpChannel(props, clientProv, serverProv);
+                ChannelServices.RegisterChannel(channel, false);
+
+                ClientServices servicos = new ClientServices();
+                RemotingServices.Marshal(servicos, "GameClient",
+                    typeof(ClientServices));
+
+                //Activate class and get object.
+                obj = (IServer)Activator.GetObject(typeof(IServer),
+                    string.Format("tcp://localhost:{0}/GameManagement", "8086"));
+
+                channelData = (ChannelDataStore)channel.ChannelData;
+                port = new Uri(channelData.ChannelUris[0]).Port;
+            }
+
+            try
+            {
+                //Register event.
+                obj.RegisterClient(port.ToString());
+            }
+            catch (SocketException)
+            {
+                tbChat.Text = "Could not locate server";
+                ChannelServices.UnregisterChannel(channel);
+                return;
+            }
+
+            tbChat.Text = "Connected! \r\n";
+            label1.Text = "Waiting for players...";
         }
     }
 
@@ -341,6 +398,7 @@ namespace pacman {
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
     delegate void EnemyMovement(IEnemy movement, int playerNumber);
+    delegate void UnmovableMovement(IUnmovable movement, int playerNumber);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
@@ -355,8 +413,9 @@ namespace pacman {
             form.Invoke(new ActivePlayers(form.ActivePlayersUpdate), players);
         }
 
-        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies)
+        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
+            //TODO fazer isto tudo sem fors (fica mais sincrono)
             for (int i = 0; i < movements.Length; i++)
             {
                 form.Invoke(new PlayerMovement(form.doMovement), movements[i], i);
@@ -365,6 +424,11 @@ namespace pacman {
             for (int i = 0; i < enemies.Length; i++)
             {
                 form.Invoke(new EnemyMovement(form.doEnemyMovement), enemies[i], i);
+            }
+
+            for(int i=0; i < unmovableObjects.Length; i++)
+            {
+                form.Invoke(new UnmovableMovement(form.doUnmovableMovement), unmovableObjects[i], i);
             }
         }
 
