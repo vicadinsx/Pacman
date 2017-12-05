@@ -14,6 +14,7 @@ namespace pacman {
     public delegate void SetBoxText(string Message);
     public partial class FormClient : Form {
 
+        List<IClient> ActivePlayers; //lista de peers para o chat
         List<PictureBox> pacmans;
         List<PictureBox> gameEnemies;
         List<PictureBox> unmovableObjects;
@@ -32,6 +33,7 @@ namespace pacman {
             InitializeComponent();
             label2.Visible = false;
             gameRunning = false;
+            ActivePlayers = new List<IClient>();
 
             ClientServices.form = this;
 
@@ -169,11 +171,11 @@ namespace pacman {
             }
         }
 
-        private void tbMsg_KeyDown(object sender, KeyEventArgs e,IClient[] ActivePlayers) {
+        private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
             if (e.KeyCode == Keys.Enter) {
                 tbMsg.Enabled = false; this.Focus();
                 //tbMsg.Text = string.Empty;
-                for (int i = 0; i < ActivePlayers.Length; i++)
+                for (int i = 0; i < ActivePlayers.Count; i++)
                 {
                     ActivePlayers[i].Message("MESSAGE", tbMsg.Text);
                 }
@@ -326,9 +328,15 @@ namespace pacman {
                 tbChat.AppendText(Message + "\r\n");
         }
 
+        internal void ActivePlayersUpdate(IClient[] players)
+        {
+            ActivePlayers.Clear();
+            ActivePlayers.AddRange(players);
+        }
     }
 
     delegate void Message(string mensagem, string auxMessage);
+    delegate void ActivePlayers(IClient[] players);
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
@@ -336,7 +344,6 @@ namespace pacman {
 
     public class ClientServices : MarshalByRefObject, IClient
     {
-        List<IClient> ActivePlayers; //lista de peers para o chat
         public static FormClient form;
 
         public ClientServices()
@@ -345,8 +352,7 @@ namespace pacman {
 
         public void UpdatePlayers(IClient[] players) //fazer update da lista de ligações
         {
-            ActivePlayers.Clear();
-            ActivePlayers.AddRange(players);
+            form.Invoke(new ActivePlayers(form.ActivePlayersUpdate), players);
         }
 
         public void UpdateGame(IPlayer[] movements, IEnemy[] enemies)
@@ -374,7 +380,7 @@ namespace pacman {
 
         public void Message(String type , String message)
         {
-            form.Invoke(new Message(form.Message), type, message, ActivePlayers.ToArray());
+            form.Invoke(new Message(form.Message), type, message);
         }
     }
 }
