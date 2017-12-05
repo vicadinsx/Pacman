@@ -169,10 +169,14 @@ namespace pacman {
             }
         }
 
-        private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
+        private void tbMsg_KeyDown(object sender, KeyEventArgs e,IClient[] ActivePlayers) {
             if (e.KeyCode == Keys.Enter) {
                 tbMsg.Enabled = false; this.Focus();
-                tbMsg.Text = string.Empty;
+                //tbMsg.Text = string.Empty;
+                for (int i = 0; i < ActivePlayers.Length; i++)
+                {
+                    ActivePlayers[i].Message("MESSAGE", tbMsg.Text);
+                }
             }
         }
 
@@ -182,6 +186,18 @@ namespace pacman {
             {
                 case "NEWPLAYER":
                     SetTextBox("Player "+auxMessage+" joined the game.");
+                    break;
+                default:
+                    return;
+            }
+        }
+
+        public void Message(string Message, string auxMessage)
+        {
+            switch (Message)
+            {
+                case "MESSAGE":
+                    SetTextBox("Player " + this.playerNumber + ": "+auxMessage);
                     break;
                 default:
                     return;
@@ -312,6 +328,7 @@ namespace pacman {
 
     }
 
+    delegate void Message(string mensagem, string auxMessage);
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
@@ -319,10 +336,17 @@ namespace pacman {
 
     public class ClientServices : MarshalByRefObject, IClient
     {
+        List<IClient> ActivePlayers; //lista de peers para o chat
         public static FormClient form;
 
         public ClientServices()
         {
+        }
+
+        public void UpdatePlayers(IClient[] players) //fazer update da lista de ligações
+        {
+            ActivePlayers.Clear();
+            ActivePlayers.AddRange(players);
         }
 
         public void UpdateGame(IPlayer[] movements, IEnemy[] enemies)
@@ -346,6 +370,11 @@ namespace pacman {
         public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
             form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies, unmovableObjects);
+        }
+
+        public void Message(String type , String message)
+        {
+            form.Invoke(new Message(form.Message), type, message, ActivePlayers.ToArray());
         }
     }
 }

@@ -15,7 +15,6 @@ namespace Server
         [STAThread]
         static void Main(string[] args)
         {
-
             Hashtable props = new Hashtable();
             props["port"] = 8086;
             props["name"] = "GameServer";
@@ -48,7 +47,7 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
-        private const int MAX_NUMBER = 1;
+        private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
         System.Timers.Timer movementTimer;
 
@@ -148,6 +147,19 @@ namespace Server
 
                 if (clients.Count == MAX_NUMBER)
                 {
+                    //enviar lista para os clientes 
+                    for (int i = 0; i < clients.Count; i++)
+                    {
+                        try
+                        {
+                            ((IClient)clients[i]).UpdatePlayers(clients.ToArray());
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                            clients.RemoveAt(i);
+                        }
+                    }
                     ThreadStart ts = new ThreadStart(this.StartGame);
                     Thread t = new Thread(ts);
                     t.Start();

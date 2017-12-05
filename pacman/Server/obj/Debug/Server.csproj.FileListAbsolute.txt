@@ -6,3 +6,12 @@ C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Server\bin\Debug\Proxy.pdb
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Server\obj\Debug\Server.exe
 C:\Users\m.m.silva\Documents\DAD\DAD\pacman\Server\obj\Debug\Server.pdb
+C:\Users\Andre\Documents\DAD\pacman\Server\bin\Debug\Server.exe.config
+C:\Users\Andre\Documents\DAD\pacman\Server\bin\Debug\Server.exe
+C:\Users\Andre\Documents\DAD\pacman\Server\bin\Debug\Server.pdb
+C:\Users\Andre\Documents\DAD\pacman\Server\bin\Debug\Proxy.dll
+C:\Users\Andre\Documents\DAD\pacman\Server\bin\Debug\Proxy.pdb
+C:\Users\Andre\Documents\DAD\pacman\Server\obj\Debug\Server.csprojResolveAssemblyReference.cache
+C:\Users\Andre\Documents\DAD\pacman\Server\obj\Debug\Server.csproj.CoreCompileInputs.cache
+C:\Users\Andre\Documents\DAD\pacman\Server\obj\Debug\Server.exe
+C:\Users\Andre\Documents\DAD\pacman\Server\obj\Debug\Server.pdb
