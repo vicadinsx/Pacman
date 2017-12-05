@@ -9,11 +9,10 @@ using System.Drawing;
 using System.Runtime.Remoting;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 
 namespace pacman {
 
-    public delegate void SetBoxText(string Message);
+    public sdelegate void SetBoxText(string Message);
     public partial class FormClient : Form {
 
         List<IClient> ActivePlayers; //lista de peers para o chat
@@ -36,6 +35,7 @@ namespace pacman {
             label2.Visible = false;
 			gameRunning = false;
             ActivePlayers = new List<IClient>();
+
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -163,23 +163,14 @@ namespace pacman {
             label1.Text = "Score: " + score;
         }
 
-        private void TbMsg_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter)
-            {
+        private void tbMsg_KeyDown(object sender, KeyEventArgs e) {
+            if (e.KeyCode == Keys.Enter) {
                 tbMsg.Enabled = false; this.Focus();
                 //tbMsg.Text = string.Empty;
-                ThreadStart ts = new ThreadStart(this.SendMessageToAll);
-                Thread t = new Thread(ts);
-                t.Start();
-            }
-        }
-
-        private void SendMessageToAll()
-        {
-            for (int i = 0; i < ActivePlayers.Count; i++)
-            {
-                ActivePlayers[i].Message("MESSAGE", tbMsg.Text);
+                for (int i = 0; i < ActivePlayers.Count; i++)
+                {
+                    ActivePlayers[i].Message("MESSAGE", tbMsg.Text);
+                }
             }
         }
 
@@ -339,12 +330,11 @@ namespace pacman {
                 tbChat.AppendText(Message + "\r\n");
         }
 
-		internal void ActivePlayersUpdate(List<IClient> players)
+		internal void ActivePlayersUpdate(IClient[] players)
 		{
-		    ActivePlayers.Clear();
-		    ActivePlayers.AddRange(players);
+		            ActivePlayers.Clear();
+		            ActivePlayers.AddRange(players);
 		}
-
         TcpChannel channel;
         ChannelDataStore channelData;
         int port;
@@ -403,7 +393,7 @@ namespace pacman {
     }
 
     delegate void Message(string mensagem, string auxMessage);
-    delegate void ActivePlayers(List<IClient> players);
+    delegate void ActivePlayers(IClient[] players);
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
@@ -418,7 +408,7 @@ namespace pacman {
         {
         }
 
-        public void UpdatePlayers(List<IClient> players) //fazer update da lista de ligações
+        public void UpdatePlayers(IClient[] players) //fazer update da lista de ligações
         {
             form.Invoke(new ActivePlayers(form.ActivePlayersUpdate), players);
         }

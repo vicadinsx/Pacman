@@ -162,12 +162,19 @@ namespace Server
                 {
                     createEnemies();
                     createUnmovableObjects();
-
                     //enviar lista para os clientes 
-                    ThreadStart tsp = new ThreadStart(this.UpdatePlayers);
-                    Thread tp = new Thread(tsp);
-                    tp.Start();
-
+                    for (int i = 0; i < clients.Count; i++)
+                    {
+                        try
+                        {
+                            ((IClient)clients[i]).UpdatePlayers(clients.ToArray());
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                            clients.RemoveAt(i);
+                        }
+                    }
                     ThreadStart ts = new ThreadStart(this.StartGame);
                     Thread t = new Thread(ts);
                     t.Start();
@@ -175,22 +182,6 @@ namespace Server
             }
         }
         
-        private void UpdatePlayers()
-        {
-            for (int i = 0; i < clients.Count; i++)
-            {
-                try
-                {
-                    ((IClient)clients[i]).UpdatePlayers(clients);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
-                    clients.RemoveAt(i);
-                }
-            }
-        }
-
         private void PublishGameEvent(string message, string auxMessage)
         {
             for (int i = 0; i < clients.Count; i++)

@@ -7,17 +7,6 @@ c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\De
 c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.csproj.GenerateResource.Cache
 c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.exe
 c:\users\mimi.mimi-pc\documents\visual studio 2015\Projects\pacman\pacman\obj\Debug\pacman.pdb
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.exe.config
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.exe
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.pdb
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.exe
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.pdb
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.dll
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.pdb
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csprojResolveAssemblyReference.cache
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.Properties.Resources.resources
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csproj.GenerateResource.Cache
-C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.FormClient.resources
 C:\Users\Andre\Documents\DAD\pacman\pacman\bin\Debug\pacman.exe.config
 C:\Users\Andre\Documents\DAD\pacman\pacman\bin\Debug\pacman.exe
 C:\Users\Andre\Documents\DAD\pacman\pacman\bin\Debug\pacman.pdb
@@ -30,3 +19,14 @@ C:\Users\Andre\Documents\DAD\pacman\pacman\obj\Debug\pacman.csproj.GenerateResou
 C:\Users\Andre\Documents\DAD\pacman\pacman\obj\Debug\pacman.csproj.CoreCompileInputs.cache
 C:\Users\Andre\Documents\DAD\pacman\pacman\obj\Debug\pacman.exe
 C:\Users\Andre\Documents\DAD\pacman\pacman\obj\Debug\pacman.pdb
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.exe.config
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.exe
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\pacman.pdb
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.dll
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\bin\Debug\Proxy.pdb
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csprojResolveAssemblyReference.cache
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.FormClient.resources
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.Properties.Resources.resources
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.csproj.GenerateResource.Cache
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.exe
+C:\Users\m.m.silva\Documents\DAD\DAD\pacman\pacman\obj\Debug\pacman.pdb
