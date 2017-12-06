@@ -38,4 +38,8 @@ namespace Puppetmaster
             System.Console.ReadLine();
         }
     }
+    class Puppetmaster
+    {
+
+    }
 }
