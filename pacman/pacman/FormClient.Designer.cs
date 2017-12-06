@@ -35,6 +35,7 @@
             this.tbMsg = new System.Windows.Forms.TextBox();
             this.tbChat = new System.Windows.Forms.TextBox();
             this.JoinGame = new System.Windows.Forms.Button();
+            this.label3 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -67,7 +68,6 @@
             this.tbMsg.Name = "tbMsg";
             this.tbMsg.Size = new System.Drawing.Size(132, 22);
             this.tbMsg.TabIndex = 143;
-            this.tbMsg.KeyDown += TbMsg_KeyDown;
             // 
             // tbChat
             // 
@@ -89,11 +89,22 @@
             this.JoinGame.UseVisualStyleBackColor = true;
             this.JoinGame.Click += new System.EventHandler(this.JoinGame_Click);
             // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Font = new System.Drawing.Font("Microsoft Sans Serif", 13.8F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label3.Location = new System.Drawing.Point(12, 177);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(85, 29);
+            this.label3.TabIndex = 146;
+            this.label3.Text = "label3";
+            // 
             // FormClient
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(639, 423);
+            this.Controls.Add(this.label3);
             this.Controls.Add(this.JoinGame);
             this.Controls.Add(this.tbChat);
             this.Controls.Add(this.tbMsg);
@@ -116,6 +127,7 @@
         private System.Windows.Forms.TextBox tbMsg;
         private System.Windows.Forms.TextBox tbChat;
         private System.Windows.Forms.Button JoinGame;
+        private System.Windows.Forms.Label label3;
     }
 }
 

@@ -25,7 +25,7 @@ namespace pacman {
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
         string lol = string.Empty;
-        private int playerNumber;
+        private int clientPlayerNumber;
         bool gameRunning;
 
         Movement currentMovement;
@@ -37,32 +37,36 @@ namespace pacman {
             label2.Visible = false;
 			gameRunning = false;
             ActivePlayers = new List<IClient>();
+
+            label3.Text = "Press Join Game to join";
+            label3.Visible = true;
+            label1.Visible = false;
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
             if (!gameRunning) return;
 
             if (e.KeyCode == Keys.Left) {
-                pacmans[playerNumber].Image = Properties.Resources.Left;
+                pacmans[clientPlayerNumber].Image = Properties.Resources.Left;
                 currentMovement = Movement.LEFT;
             }
             if (e.KeyCode == Keys.Right) {
-                pacmans[playerNumber].Image = Properties.Resources.Right;
+                pacmans[clientPlayerNumber].Image = Properties.Resources.Right;
                 currentMovement = Movement.RIGHT;
             }
             if (e.KeyCode == Keys.Up) {
-                pacmans[playerNumber].Image = Properties.Resources.Up;
+                pacmans[clientPlayerNumber].Image = Properties.Resources.Up;
                 currentMovement = Movement.UP;
             }
             if (e.KeyCode == Keys.Down) {
-                pacmans[playerNumber].Image = Properties.Resources.down;
+                pacmans[clientPlayerNumber].Image = Properties.Resources.down;
                 currentMovement = Movement.DOWN;
             }
             if (e.KeyCode == Keys.Enter) {
                     tbMsg.Enabled = true; tbMsg.Focus();
                }
 
-            obj.RegisterMovement(playerNumber, currentMovement);
+            obj.RegisterMovement(clientPlayerNumber, currentMovement);
         }
 
         private void keyisup(object sender, KeyEventArgs e)
@@ -91,7 +95,7 @@ namespace pacman {
                 tbMsg.Enabled = true; tbMsg.Focus();
             }
 
-            obj.UnRegisterMovement(playerNumber, currentMovement);
+            obj.UnRegisterMovement(clientPlayerNumber, currentMovement);
         }
 
         private void defineMovementImage(Movement direction, int playerNumber)
@@ -115,53 +119,78 @@ namespace pacman {
 
         public void doEnemyMovement(IEnemy enemy, int enemyNumber)
         {
-            gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
-            gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
-
-            if (pacmans[playerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+            try
             {
-                obj.PlayerKilled(playerNumber);
+                gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
+                gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
+
+                if (!gameRunning) return;
+
+                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+                {
+                    obj.PlayerKilled(clientPlayerNumber);
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception("Error on doEnemyMovement : " + ex.Message);
             }
         }
         public void doUnmovableMovement(IUnmovable unmovable, int unmovableNumber)
         {
-            unmovableObjects[unmovableNumber].Visible = unmovable.isVisible();
-            unmovableObjects[unmovableNumber].Top = unmovable.GetY();
-            unmovableObjects[unmovableNumber].Left = unmovable.GetX();
-
-            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.WALL)
+            try
             {
-                obj.PlayerKilled(playerNumber);
+                unmovableObjects[unmovableNumber].Visible = unmovable.isVisible();
+                unmovableObjects[unmovableNumber].Top = unmovable.GetY();
+                unmovableObjects[unmovableNumber].Left = unmovable.GetX();
+
+                if (!gameRunning) return;
+
+                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.WALL)
+                {
+                    obj.PlayerKilled(clientPlayerNumber);
+                }
+
+                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.COIN)
+                {
+                    obj.GatheredCoin(clientPlayerNumber, unmovableNumber);
+                }
             }
-
-            if (pacmans[playerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.COIN)
+            catch (Exception ex)
             {
-                obj.GatheredCoin(playerNumber, unmovableNumber);
+                throw new Exception("Error on doUnmovableMovement : " + ex.Message);
             }
         }
 
         public void doMovement(IPlayer movement, int playerNumber)
         {
-            if (!gameRunning) return;
-
-            pacmans[playerNumber].Top = movement.GetY();
-            pacmans[playerNumber].Left = movement.GetX();
-
-            if(movement.isMovementChanged())
-                defineMovementImage(movement.GetMovement(), playerNumber);
-
-            if(playerNumber == this.playerNumber && movement.isPlayerDead())
+            try
             {
-                label2.Text = "You are dead";
-                label2.Visible = true;
-            }
+                pacmans[playerNumber].Top = movement.GetY();
+                pacmans[playerNumber].Left = movement.GetX();
 
-            if (playerNumber == this.playerNumber)
+                if (movement.isMovementChanged())
+                    defineMovementImage(movement.GetMovement(), playerNumber);
+
+                if (!gameRunning) return;
+
+                if (playerNumber == this.clientPlayerNumber && movement.isPlayerDead())
+                {
+                    label2.Text = "You are dead";
+                    label2.Visible = true;
+                }
+
+                if (playerNumber == this.clientPlayerNumber)
+                {
+                    score = movement.getScore();
+                }
+
+                label1.Text = "Score: " + score;
+            }
+            catch (Exception ex)
             {
-                score = movement.getScore();
+                throw new Exception("Error on doMovement : " + ex.Message);
             }
-
-            label1.Text = "Score: " + score;
         }
 
         private void TbMsg_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
@@ -197,10 +226,14 @@ namespace pacman {
                     SetTextBox("Player "+auxMessage+" joined the game.");
                     break;
                 case "GAMEOVER":
-                    label1.Text = auxMessage;
+                    label3.Text = auxMessage;
+                    label3.Visible = true;
+
                     label2.Visible = false;
                     gameRunning = false;
                     JoinGame.Enabled = true;
+                    label1.Text = "Press Join Game to start a new game";
+                    label1.Visible = true;
                     break;
                 default:
                     return;
@@ -221,13 +254,21 @@ namespace pacman {
 
         public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
         {
-            this.playerNumber = playerNumber;
+            this.clientPlayerNumber = playerNumber; 
+            if (playerNumber != -1)
+            { 
+                gameRunning = true;
+                SetTextBox("Session full, game is starting!");
+            }
+            else label1.Text = "Viewing game...";
 
-            gameRunning = true;
+            label3.Visible = false;
+            label1.Visible = true;
+
             addNewPlayers(players);
             addNewEnemies(enemies);
             addUnmovableObjects(unmovableGameObjects);
-            SetTextBox("Session full, game is starting!");
+
         }
 
         private void addUnmovableObjects(IUnmovable[] unmovableGameObjects)
@@ -359,11 +400,11 @@ namespace pacman {
         {
             JoinGame.Enabled = false;
             gameRunning = false;
-
+            label3.Visible = false;
             if (obj == null)
             {
                 ClientServices.form = this;
-
+  
                 //Define client and server providers (full filter to be able to use events).  
                 clientProv = new BinaryClientFormatterSinkProvider();
                 serverProv = new BinaryServerFormatterSinkProvider();
@@ -379,7 +420,10 @@ namespace pacman {
                 channel = new TcpChannel(props, clientProv, serverProv);
                 ChannelServices.RegisterChannel(channel, false);
 
-                ClientServices servicos = new ClientServices();
+                channelData = (ChannelDataStore)channel.ChannelData;
+                port = new Uri(channelData.ChannelUris[0]).Port;
+
+                ClientServices servicos = new ClientServices(port.ToString());
                 RemotingServices.Marshal(servicos, "GameClient",
                     typeof(ClientServices));
 
@@ -387,14 +431,13 @@ namespace pacman {
                 obj = (IServer)Activator.GetObject(typeof(IServer),
                     string.Format("tcp://localhost:{0}/GameManagement", "8086"));
 
-                channelData = (ChannelDataStore)channel.ChannelData;
-                port = new Uri(channelData.ChannelUris[0]).Port;
             }
 
             try
             {
                 //Register event.
                 obj.RegisterClient(port.ToString());
+                
             }
             catch (SocketException)
             {
@@ -419,9 +462,11 @@ namespace pacman {
     public class ClientServices : MarshalByRefObject, IClient
     {
         public static FormClient form;
+        public string name;
 
-        public ClientServices()
+        public ClientServices(string name)
         {
+            this.name = name;
         }
 
         public void UpdatePlayers(List<IClient> players) //fazer update da lista de ligações
@@ -458,9 +503,24 @@ namespace pacman {
             form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies, unmovableObjects);
         }
 
-        public void Message(String type , String sender, String message)
+ 		public void Message(String type , String sender, String message)
         {
             form.Invoke(new Message(form.Message), type, sender, message);
+        }
+
+        public void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
+        {
+            form.Invoke(new StartGameEvent(form.StartGame), -1, players, enemies, unmovableObjects);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.name.Equals(((ClientServices)obj).name);
+        }
+
+        public override int GetHashCode()
+        {
+            return name.GetHashCode();
         }
     }
 }
