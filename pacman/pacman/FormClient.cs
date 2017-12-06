@@ -36,6 +36,10 @@ namespace pacman {
             label2.Visible = false;
 			gameRunning = false;
             ActivePlayers = new List<IClient>();
+
+            label3.Text = "Press Join Game to join";
+            label3.Visible = true;
+            label1.Visible = false;
         }
 
         private void keyisdown(object sender, KeyEventArgs e) {
@@ -216,11 +220,14 @@ namespace pacman {
                     SetTextBox("Player "+auxMessage+" joined the game.");
                     break;
                 case "GAMEOVER":
-                    label1.Text = auxMessage;
+                    label3.Text = auxMessage;
+                    label3.Visible = true;
+
                     label2.Visible = false;
                     gameRunning = false;
                     JoinGame.Enabled = true;
-                    SetTextBox("System : Press Join Game to start a new game");
+                    label1.Text = "Press Join Game to start a new game";
+                    label1.Visible = true;
                     break;
                 default:
                     return;
@@ -248,6 +255,9 @@ namespace pacman {
                 SetTextBox("Session full, game is starting!");
             }
             else label1.Text = "Viewing game...";
+
+            label3.Visible = false;
+            label1.Visible = true;
 
             addNewPlayers(players);
             addNewEnemies(enemies);
@@ -384,11 +394,11 @@ namespace pacman {
         {
             JoinGame.Enabled = false;
             gameRunning = false;
-
+            label3.Visible = false;
             if (obj == null)
             {
                 ClientServices.form = this;
-
+  
                 //Define client and server providers (full filter to be able to use events).  
                 clientProv = new BinaryClientFormatterSinkProvider();
                 serverProv = new BinaryServerFormatterSinkProvider();
@@ -404,7 +414,10 @@ namespace pacman {
                 channel = new TcpChannel(props, clientProv, serverProv);
                 ChannelServices.RegisterChannel(channel, false);
 
-                ClientServices servicos = new ClientServices();
+                channelData = (ChannelDataStore)channel.ChannelData;
+                port = new Uri(channelData.ChannelUris[0]).Port;
+
+                ClientServices servicos = new ClientServices(port.ToString());
                 RemotingServices.Marshal(servicos, "GameClient",
                     typeof(ClientServices));
 
@@ -412,14 +425,13 @@ namespace pacman {
                 obj = (IServer)Activator.GetObject(typeof(IServer),
                     string.Format("tcp://localhost:{0}/GameManagement", "8086"));
 
-                channelData = (ChannelDataStore)channel.ChannelData;
-                port = new Uri(channelData.ChannelUris[0]).Port;
             }
 
             try
             {
                 //Register event.
                 obj.RegisterClient(port.ToString());
+                
             }
             catch (SocketException)
             {
@@ -444,9 +456,11 @@ namespace pacman {
     public class ClientServices : MarshalByRefObject, IClient
     {
         public static FormClient form;
+        public string name;
 
-        public ClientServices()
+        public ClientServices(string name)
         {
+            this.name = name;
         }
 
         public void UpdatePlayers(List<IClient> players) //fazer update da lista de ligações
@@ -491,6 +505,16 @@ namespace pacman {
         public void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
             form.Invoke(new StartGameEvent(form.StartGame), -1, players, enemies, unmovableObjects);
+        }
+
+        public override bool Equals(object obj)
+        {
+            return this.name.Equals(((ClientServices)obj).name);
+        }
+
+        public override int GetHashCode()
+        {
+            return name.GetHashCode();
         }
     }
 }

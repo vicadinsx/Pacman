@@ -90,5 +90,6 @@ namespace Proxy
         void Message(string Message, string auxMessage);
 
         void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
+
     }
 }

@@ -32,7 +32,6 @@ namespace Proxy
         public bool isDead;
 
         public Movement direction;
-
         public PlayerGameObject(int playerNumber)
         {
             x = 8;

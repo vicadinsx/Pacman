@@ -83,6 +83,12 @@ namespace Server
 
         private void updateGame()
         {
+            for (int i = 0; i < playerObjects.Length; i++)
+            {
+                if (!playerObjects[i].isPlayerDead())
+                    playerObjects[i].updatePosition();
+            }
+
             if (enemyGameObjects[0].IntersectsWith(unmovableGameObjects[0].getRectangle()) ||
                 enemyGameObjects[0].IntersectsWith(unmovableGameObjects[2].getRectangle()))
                 enemyGameObjects[0].enemyXSpeed = -enemyGameObjects[0].enemyXSpeed;
@@ -184,9 +190,9 @@ namespace Server
                 }
                 else
                 {
-                    ThreadStart ts = new ThreadStart(this.StartViewer);
+                    ParameterizedThreadStart ts = new ParameterizedThreadStart(this.StartViewer);
                     Thread t = new Thread(ts);
-                    t.Start();
+                    t.Start(newClient);
                 }
             }
         }
@@ -255,6 +261,21 @@ namespace Server
                 }
             }
 
+            List<IClient> viewers = connectedClients.Except(clients).ToList();
+
+            for (int i = 0; i < viewers.Count; i++)
+            {
+                try
+                {
+                    ((IClient)viewers[i]).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed sending message to client on StartGame. Removing client. " + e.Message);
+                    viewers.RemoveAt(i);
+                }
+            }
+
             movementTimer = new System.Timers.Timer(MS_TIMER);
 
             movementTimer.Elapsed += RoundTimer;
@@ -262,19 +283,15 @@ namespace Server
             movementTimer.Enabled = true;
         }
 
-        public void StartViewer()
+        public void StartViewer(object client)
         {
-            lock (connectedClients)
+            try
             {
-                try
-                {
-                    ((IClient)connectedClients[connectedClients.Count - 1]).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("Failed sending message to client on StartViewer. Removing client. " + e.Message);
-                    clients.RemoveAt(connectedClients.Count - 1);
-                }
+                ((IClient)client).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Failed sending message to client on StartViewer. Removing client. " + e.Message);
             }
         }
 
@@ -333,14 +350,6 @@ namespace Server
         {
             if (!gameRunning) return;
 
-            for (int i = 0; i < playerObjects.Length; i++)
-            {
-                if (!playerObjects[i].isPlayerDead())
-                    playerObjects[i].updatePosition();
-            }
-
-            updateGame();
-
             ThreadStart tsUpdate = new ThreadStart(this.sendUpdates);
             Thread tUpdate = new Thread(tsUpdate);
             tUpdate.Start();
@@ -348,6 +357,8 @@ namespace Server
 
         public void sendUpdates()
         {
+            updateGame();
+
             lock (connectedClients)
             {
                 for (int i = 0; i < connectedClients.Count; i++)
