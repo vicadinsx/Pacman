@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 
 namespace Proxy
@@ -85,7 +86,10 @@ namespace Proxy
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)
         void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects);
-        void UpdatePlayers(IClient[] client);
-        void Message(string Message, string auxMessage);
+        void UpdatePlayers(List<IClient> client);
+        void Message(string Message, string Sender, string auxMessage);
+
+        void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
+
     }
 }

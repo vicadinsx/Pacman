@@ -20,7 +20,6 @@ namespace pacman {
         List<PictureBox> pacmans;
         List<PictureBox> gameEnemies;
         List<PictureBox> unmovableObjects;
-        int EnterCounter=0;
         IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
@@ -43,6 +42,29 @@ namespace pacman {
             label1.Visible = false;
         }
 
+
+        protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
+        {
+            if (keyData == Keys.Enter && !tbMsg.Enabled)
+            {
+                tbMsg.Text = string.Empty;
+                tbMsg.Enabled = true;
+                tbMsg.Focus();
+                return true;
+            }
+            if (keyData == Keys.Enter && tbMsg.Enabled)
+            {
+                ThreadStart ts = new ThreadStart(this.SendMessageToAll);
+                Thread t = new Thread(ts);
+                t.Start();
+
+                tbMsg.Enabled = false;
+                this.Focus();
+                return true;
+            }
+            return false;
+        }
+
         private void keyisdown(object sender, KeyEventArgs e) {
             if (!gameRunning) return;
 
@@ -62,9 +84,6 @@ namespace pacman {
                 pacmans[clientPlayerNumber].Image = Properties.Resources.down;
                 currentMovement = Movement.DOWN;
             }
-            if (e.KeyCode == Keys.Enter) {
-                    tbMsg.Enabled = true; tbMsg.Focus();
-               }
 
             obj.RegisterMovement(clientPlayerNumber, currentMovement);
         }
@@ -89,10 +108,6 @@ namespace pacman {
             if (e.KeyCode == Keys.Down)
             {
                 currentMovement = Movement.DOWN;
-            }
-            if (e.KeyCode == Keys.Enter)
-            {
-                tbMsg.Enabled = true; tbMsg.Focus();
             }
 
             obj.UnRegisterMovement(clientPlayerNumber, currentMovement);
@@ -193,28 +208,11 @@ namespace pacman {
             }
         }
 
-        private void TbMsg_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter && EnterCounter == 1)
-            {
-                EnterCounter -= 1;
-                ThreadStart ts = new ThreadStart(this.SendMessageToAll);
-                Thread t = new Thread(ts);
-                t.Start();
-                tbMsg.Enabled = false; this.Focus();
-            }
-            if (e.KeyCode == Keys.Enter && EnterCounter == 0)
-            {
-                EnterCounter += 1;
-                tbMsg.Enabled = false; this.Focus();
-            }
-        }
-
         private void SendMessageToAll()
         {
             for (int i = 0; i < ActivePlayers.Count; i++)
             {
-                ActivePlayers[i].Message("MESSAGE", this.playerNumber.ToString(), tbMsg.Text);
+                ActivePlayers[i].Message("MESSAGE", this.clientPlayerNumber.ToString(), tbMsg.Text);
             }
         }
 

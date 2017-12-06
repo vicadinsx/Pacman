@@ -50,7 +50,7 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
-        private const int MAX_NUMBER = 1;
+        private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
         private const int NUM_COINS = 60;
         private bool gameRunning = false;
