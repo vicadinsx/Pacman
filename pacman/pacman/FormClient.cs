@@ -20,6 +20,7 @@ namespace pacman {
         List<PictureBox> pacmans;
         List<PictureBox> gameEnemies;
         List<PictureBox> unmovableObjects;
+        int EnterCounter=0;
         IServer obj;
         BinaryClientFormatterSinkProvider clientProv;
         BinaryServerFormatterSinkProvider serverProv;
@@ -165,13 +166,18 @@ namespace pacman {
 
         private void TbMsg_KeyDown(object sender, System.Windows.Forms.KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Enter)
+            if (e.KeyCode == Keys.Enter && EnterCounter == 1)
             {
-                tbMsg.Enabled = false; this.Focus();
-                //tbMsg.Text = string.Empty;
+                EnterCounter -= 1;
                 ThreadStart ts = new ThreadStart(this.SendMessageToAll);
                 Thread t = new Thread(ts);
                 t.Start();
+                tbMsg.Enabled = false; this.Focus();
+            }
+            if (e.KeyCode == Keys.Enter && EnterCounter == 0)
+            {
+                EnterCounter += 1;
+                tbMsg.Enabled = false; this.Focus();
             }
         }
 
@@ -179,7 +185,7 @@ namespace pacman {
         {
             for (int i = 0; i < ActivePlayers.Count; i++)
             {
-                ActivePlayers[i].Message("MESSAGE", tbMsg.Text);
+                ActivePlayers[i].Message("MESSAGE", this.playerNumber.ToString(), tbMsg.Text);
             }
         }
 
@@ -201,12 +207,12 @@ namespace pacman {
             }
         }
 
-        public void Message(string Message, string auxMessage)
+        public void Message(string Message, string sender,string auxMessage)
         {
             switch (Message)
             {
                 case "MESSAGE":
-                    SetTextBox("Player " + this.playerNumber + ": "+auxMessage);
+                    SetTextBox("Player " + sender + ": "+auxMessage);
                     break;
                 default:
                     return;
@@ -402,7 +408,7 @@ namespace pacman {
         }
     }
 
-    delegate void Message(string mensagem, string auxMessage);
+    delegate void Message(string mensagem, string sender, string auxMessage);
     delegate void ActivePlayers(List<IClient> players);
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
@@ -452,9 +458,9 @@ namespace pacman {
             form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies, unmovableObjects);
         }
 
-        public void Message(String type , String message)
+        public void Message(String type , String sender, String message)
         {
-            form.Invoke(new Message(form.Message), type, message);
+            form.Invoke(new Message(form.Message), type, sender, message);
         }
     }
 }
