@@ -88,5 +88,7 @@ namespace Proxy
         void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects);
         void UpdatePlayers(List<IClient> client);
         void Message(string Message, string auxMessage);
+
+        void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
     }
 }

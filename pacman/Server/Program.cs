@@ -44,6 +44,7 @@ namespace Server
     class GameServerServices : MarshalByRefObject, IServer
     {
         List<IClient> clients;
+        List<IClient> connectedClients;
 
         PlayerGameObject[] playerObjects;
         UnmovableGameObject[] unmovableGameObjects;
@@ -61,6 +62,7 @@ namespace Server
 
         GameServerServices()
         {
+            connectedClients = new List<IClient>();
             clients = new List<IClient>(MAX_NUMBER);
             playerObjects = new PlayerGameObject[MAX_NUMBER];
             createEnemies();
@@ -152,23 +154,37 @@ namespace Server
 
             lock (clients)
             {
-                clients.Add(newClient);
-
-                ThreadStart tsNew = new ThreadStart(this.PublishNewPlayer);
-                Thread tNew = new Thread(tsNew);
-                tNew.Start();
-
-                if (clients.Count == MAX_NUMBER)
+                if (!connectedClients.Contains(newClient))
                 {
-                    createEnemies();
-                    createUnmovableObjects();
+                    connectedClients.Add(newClient);
 
                     //enviar lista para os clientes 
                     ThreadStart tsp = new ThreadStart(this.UpdatePlayers);
                     Thread tp = new Thread(tsp);
                     tp.Start();
+                }
 
-                    ThreadStart ts = new ThreadStart(this.StartGame);
+                if (clients.Count < MAX_NUMBER)
+                {
+                    clients.Add(newClient);
+
+                    ThreadStart tsNew = new ThreadStart(this.PublishNewPlayer);
+                    Thread tNew = new Thread(tsNew);
+                    tNew.Start();
+
+                    if (clients.Count == MAX_NUMBER)
+                    {
+                        createEnemies();
+                        createUnmovableObjects();
+
+                        ThreadStart ts = new ThreadStart(this.StartGame);
+                        Thread t = new Thread(ts);
+                        t.Start();
+                    }
+                }
+                else
+                {
+                    ThreadStart ts = new ThreadStart(this.StartViewer);
                     Thread t = new Thread(ts);
                     t.Start();
                 }
@@ -177,31 +193,31 @@ namespace Server
         
         private void UpdatePlayers()
         {
-            for (int i = 0; i < clients.Count; i++)
+            for (int i = 0; i < connectedClients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).UpdatePlayers(clients);
+                    ((IClient)connectedClients[i]).UpdatePlayers(connectedClients);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
-                    clients.RemoveAt(i);
+                    Console.WriteLine("Failed sending message to client on UpdatePlayers. Removing client. " + e.Message);
+                    connectedClients.RemoveAt(i);
                 }
             }
         }
 
         private void PublishGameEvent(string message, string auxMessage)
         {
-            for (int i = 0; i < clients.Count; i++)
+            for (int i = 0; i < connectedClients.Count; i++)
             {
                 try
                 {
-                    ((IClient)clients[i]).GameEvent(message, auxMessage);
+                    ((IClient)connectedClients[i]).GameEvent(message, auxMessage);
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                    Console.WriteLine("Failed sending message to client on PublishGameEvent. Removing client. " + e.Message);
                     clients.RemoveAt(i);
                 }
             }
@@ -234,7 +250,7 @@ namespace Server
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + e.Message);
+                    Console.WriteLine("Failed sending message to client on StartGame. Removing client. " + e.Message);
                     clients.RemoveAt(i);
                 }
             }
@@ -244,6 +260,22 @@ namespace Server
             movementTimer.Elapsed += RoundTimer;
             movementTimer.AutoReset = true;
             movementTimer.Enabled = true;
+        }
+
+        public void StartViewer()
+        {
+            lock (connectedClients)
+            {
+                try
+                {
+                    ((IClient)connectedClients[connectedClients.Count - 1]).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Failed sending message to client on StartViewer. Removing client. " + e.Message);
+                    clients.RemoveAt(connectedClients.Count - 1);
+                }
+            }
         }
 
         public void RegisterMovement(int playerNumber, Movement movement)
@@ -309,20 +341,29 @@ namespace Server
 
             updateGame();
 
-            for (int i = 0; i < clients.Count; i++)
+            ThreadStart tsUpdate = new ThreadStart(this.sendUpdates);
+            Thread tUpdate = new Thread(tsUpdate);
+            tUpdate.Start();
+        }
+
+        public void sendUpdates()
+        {
+            lock (connectedClients)
             {
-                try
+                for (int i = 0; i < connectedClients.Count; i++)
                 {
-                    ((IClient)clients[i]).UpdateGame(playerObjects, enemyGameObjects, unmovableGameObjects);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("Failed sending message to client. Removing client. " + ex.Message);
-                    clients.RemoveAt(i);
+                    try
+                    {
+                        ((IClient)connectedClients[i]).UpdateGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Failed sending message to client on RoundTimer. Removing client. " + ex.Message);
+                        //connectedClients.RemoveAt(i);
+                    }
                 }
             }
         }
-
         public void GameOver()
         {
             movementTimer.Stop();
