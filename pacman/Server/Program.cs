@@ -50,11 +50,14 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
+        int CoordId;
+        int id;
+        int[] serverIds;
         private const int MAX_NUMBER = 2;
         private const int MS_TIMER = 30;
         private const int NUM_COINS = 60;
         private bool gameRunning = false;
-
+        IServer[] servers;
         int playerNumber = 0;
         int score = 0;
 
@@ -406,6 +409,58 @@ namespace Server
                 gameRunning = false;
                 GameOver();
             }
+        }
+
+        public void election()//falta o T
+        {
+            for (int i = 0; i < serverIds.Count(); i++)
+            {
+                if (this.id < serverIds[i])
+                {
+                    servers[i].message("ELECTION", this.id);
+                }
+            }
+        }
+
+        public void answer(int s)//corrido quando id maior que o this.id
+        {
+            servers[s].message("ANSWER", this.id);
+        }
+
+        public void coordinator()
+        {
+            for (int i = 0; i < serverIds.Count(); i++)
+            {
+                if (this.id > serverIds[i])
+                {
+                    servers[i].message("COORDINATOR", this.id);
+                }
+            }
+        }
+
+        public void message(string type, int senderId)
+        {
+            switch (type)
+            {
+                case "ELECTION":
+                    if (this.id > senderId)
+                    {
+                        this.answer(senderId);
+                        this.election();
+                        break;
+                    }
+                    else
+                        break;
+                case "COORDINATOR":
+                    this.CoordId = senderId;
+                    break;
+                case "ANSWER":
+
+                    break;
+                default:
+                    break;
+            }
+
         }
     }
 }
