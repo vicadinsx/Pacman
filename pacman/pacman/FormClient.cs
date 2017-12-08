@@ -457,6 +457,14 @@ namespace pacman {
             obj = server;
         }
 
+        public string Status()
+        {
+            string result = string.Empty;
+            result += isCrashed ? "Crashed" : "Connected";
+            result += gameRunning ? ", Running the game" : ", Not running the game";
+            return result;
+        }
+
         public void JoinGameByPuppet(IServer server, string port, string name)
         {
             JoinGame.Enabled = false;

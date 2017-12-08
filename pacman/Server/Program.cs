@@ -45,6 +45,10 @@ namespace Server
         List<IClient> clients;
         List<IClient> connectedClients;
 
+        Dictionary<int, PlayerGameObject[]> playerByRound;
+        Dictionary<int, UnmovableGameObject[]> unmovableByRound;
+        Dictionary<int, EnemyGameObject[]> enemyByRound;
+
         PlayerGameObject[] playerObjects;
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
@@ -54,8 +58,8 @@ namespace Server
         int CoordId;
         int id;
         int[] serverIds;
-        private const int MAX_NUMBER = 2;
-        private const int MS_TIMER = 30;
+        private int MAX_NUMBER = 2;
+        private int MS_TIMER = 30;
         private const int NUM_COINS = 60;
         private bool gameRunning = false;
         IServer[] servers;
@@ -67,11 +71,17 @@ namespace Server
         System.Timers.Timer pingTimer;
         System.Timers.Timer answserTimer;
 
+        int roundNumber = 0;
         public GameServerServices()
         {
             connectedClients = new List<IClient>();
             clients = new List<IClient>(MAX_NUMBER);
             playerObjects = new PlayerGameObject[MAX_NUMBER];
+
+            playerByRound = new Dictionary<int, PlayerGameObject[]>();
+            enemyByRound = new Dictionary<int, EnemyGameObject[]>();
+            unmovableByRound = new Dictionary<int, UnmovableGameObject[]>();
+
             createEnemies();
             createUnmovableObjects();
         }
@@ -293,6 +303,12 @@ namespace Server
                 }
             }
 
+            unmovableByRound.Add(roundNumber, (UnmovableGameObject[])unmovableGameObjects.Clone());
+            enemyByRound.Add(roundNumber, (EnemyGameObject[])enemyGameObjects.Clone());
+            playerByRound.Add(roundNumber, (PlayerGameObject[])playerObjects.Clone());
+
+            roundNumber++;
+
             movementTimer = new System.Timers.Timer(MS_TIMER);
             movementTimer.Elapsed += RoundTimer;
             movementTimer.AutoReset = true;
@@ -364,7 +380,9 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
-            movementTimer.Stop();
+            unmovableByRound.Add(roundNumber, (UnmovableGameObject[])unmovableGameObjects.Clone());
+            enemyByRound.Add(roundNumber, (EnemyGameObject[])enemyGameObjects.Clone());
+            playerByRound.Add(roundNumber, (PlayerGameObject[])playerObjects.Clone());
 
             if (!gameRunning) return;
 
@@ -372,7 +390,7 @@ namespace Server
             Thread tUpdate = new Thread(tsUpdate);
             tUpdate.Start();
 
-            movementTimer.Start();
+            roundNumber++;
         }
 
         public void sendUpdates()
@@ -513,7 +531,7 @@ namespace Server
                     else
                         break;
                 case "COORDINATOR":
-                    if (senderId > id)
+                    if (senderId >= id)
                     {
                         this.CoordId = senderId;
                         SetPing();
@@ -584,7 +602,53 @@ namespace Server
 
         public int getId()
         {
-            return CoordId;
+            return id;
+        }
+
+        public void DefineVariables(int maxPlayers, int roundTime)
+        {
+            MAX_NUMBER = maxPlayers;
+            MS_TIMER = roundTime;
+            clients = new List<IClient>(MAX_NUMBER);
+            playerObjects = new PlayerGameObject[MAX_NUMBER];
+        }
+
+        public string Status()
+        {
+            string result = string.Empty;
+            result += isCrashed ? "Crashed" : "Connected";
+            result += isFrozen ? ", Frozen" : ", Not Frozen";
+            result += id == CoordId ? ", Coordinator" : ", Not Coordinator";
+            return result;
+        }
+
+        public string LocalState(int round)
+        {
+            string result = string.Empty;
+            EnemyGameObject[] enemies = enemyByRound[round - 1];
+            UnmovableGameObject[] unmovables = unmovableByRound[round - 1];
+            PlayerGameObject[] players = playerByRound[round - 1];
+
+            for(int i=0; i < enemies.Length; i++)
+            {
+                result += "M, " + enemies[i].x + ", " + enemies[i].y +'\n';
+            }
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                result += "P"+i+", "+ (players[i].isDead ? "L, ":"P, ") + players[i].x + ", " + players[i].y + '\n';
+            }
+
+            for (int i = 0; i < unmovables.Length; i++)
+            {
+                if (unmovables[i].GetEnemyType() == UnmovableType.COIN && unmovables[i].isVisible)
+                    result += "C, " + unmovables[i].x + ", " + unmovables[i].y + '\n';
+
+                if (unmovables[i].GetEnemyType() == UnmovableType.WALL)
+                    result += "W, " + unmovables[i].x + ", " + unmovables[i].y + '\n';
+            }
+
+            return result;
         }
     }
 }

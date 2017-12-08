@@ -86,6 +86,9 @@ namespace Proxy
         int getId();
         void Freeze();
         void UnFreeze();
+        void DefineVariables(int maxPlayers, int roundTime);
+        string Status();
+        string LocalState(int round);
     }
 
     //Client interface
