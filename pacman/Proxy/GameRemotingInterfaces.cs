@@ -63,10 +63,8 @@ namespace Proxy
     public interface IServer
     {
         //Regist a client, with his port to be able to communicate
-        void RegisterClient(string NewClientPort);
+        void RegisterClient(string NewClientPort, string name = "");
 
-        //TODO
-        //Create methods for Input receiving
         void RegisterMovement(int playerNumber, Movement movement);
 
         void UnRegisterMovement(int playerNumber, Movement movement);
@@ -74,6 +72,20 @@ namespace Proxy
         void PlayerKilled(int playerNumber);
 
         void GatheredCoin(int playerNumber, int coinNumber);
+
+        void SetReplicationData(int serverId, int[] serversId, IServer[] servers);
+
+        void message(string type, int senderId);
+
+        bool IsAlive();
+
+        void UpdateData(PlayerGameObject[] _playerObjects, UnmovableGameObject[] _unmovableObjects, EnemyGameObject[] _enemyObjects);
+
+        void crash();
+
+        int getId();
+        void Freeze();
+        void UnFreeze();
     }
 
     //Client interface
@@ -90,6 +102,7 @@ namespace Proxy
         void Message(string Message, string Sender, string auxMessage);
 
         void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
+        void UpdateServer(IServer server);
 
     }
 }

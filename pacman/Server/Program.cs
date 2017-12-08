@@ -16,7 +16,6 @@ namespace Server
         [STAThread]
         static void Main(string[] args)
         {
-
             Hashtable props = new Hashtable();
             props["port"] = 8086;
             props["name"] = "GameServer";
@@ -41,7 +40,7 @@ namespace Server
         }
     }
 
-    class GameServerServices : MarshalByRefObject, IServer
+    public class GameServerServices : MarshalByRefObject, IServer
     {
         List<IClient> clients;
         List<IClient> connectedClients;
@@ -50,20 +49,25 @@ namespace Server
         UnmovableGameObject[] unmovableGameObjects;
         EnemyGameObject[] enemyGameObjects;
 
+        bool isCoord = false;
+        bool isCrashed = false;
         int CoordId;
         int id;
         int[] serverIds;
         private const int MAX_NUMBER = 2;
-        private const int MS_TIMER = 20;
+        private const int MS_TIMER = 30;
         private const int NUM_COINS = 60;
         private bool gameRunning = false;
         IServer[] servers;
         int playerNumber = 0;
         int score = 0;
+        bool isFrozen = false;
 
         System.Timers.Timer movementTimer;
+        System.Timers.Timer pingTimer;
+        System.Timers.Timer answserTimer;
 
-        GameServerServices()
+        public GameServerServices()
         {
             connectedClients = new List<IClient>();
             clients = new List<IClient>(MAX_NUMBER);
@@ -82,6 +86,16 @@ namespace Server
             enemyGameObjects[1] = new EnemyGameObject(5, 0, 270, 336, 40, 37, EnemyType.YELLOW);
             //PinkGhost
             enemyGameObjects[2] = new EnemyGameObject(5, 5, 370, 89, 40, 37, EnemyType.PINK);
+        }
+
+        public void Freeze()
+        {
+            isFrozen = true;
+        }
+
+        public void UnFreeze()
+        {
+            isFrozen = false;
         }
 
         private void updateGame()
@@ -154,12 +168,12 @@ namespace Server
 
         }
 
-        public void RegisterClient(string NewClientName)
+        public void RegisterClient(string NewClientName, string name)
         {
-            Console.WriteLine("New client listening at " + "tcp://localhost:" + NewClientName + "/GameClient");
+            Console.WriteLine("New client listening at " + "tcp://localhost:" + NewClientName + "/GameClient"+name);
             IClient newClient =
                 (IClient)Activator.GetObject(
-                       typeof(IClient), "tcp://localhost:" + NewClientName + "/GameClient");
+                       typeof(IClient), "tcp://localhost:" + NewClientName + "/GameClient"+name);
 
             lock (clients)
             {
@@ -211,7 +225,7 @@ namespace Server
                 catch (Exception e)
                 {
                     Console.WriteLine("Failed sending message to client on UpdatePlayers. Removing client. " + e.Message);
-                    connectedClients.RemoveAt(i);
+                    //connectedClients.RemoveAt(i);
                 }
             }
         }
@@ -227,7 +241,7 @@ namespace Server
                 catch (Exception e)
                 {
                     Console.WriteLine("Failed sending message to client on PublishGameEvent. Removing client. " + e.Message);
-                    clients.RemoveAt(i);
+                    //clients.RemoveAt(i);
                 }
             }
         }
@@ -364,7 +378,7 @@ namespace Server
         public void sendUpdates()
         {
             updateGame();
-
+            List<IClient> removedClients = new List<IClient>();
             lock (connectedClients)
             {
                 for (int i = 0; i < connectedClients.Count; i++)
@@ -376,9 +390,16 @@ namespace Server
                     catch (Exception ex)
                     {
                         Console.WriteLine("Failed sending message to client on RoundTimer. Removing client. " + ex.Message);
-                        //connectedClients.RemoveAt(i);
+                        removedClients.Add(connectedClients[i]);
+                        playerObjects[i].isDead = true;
                     }
                 }
+            }
+
+            connectedClients = connectedClients.Except(removedClients).ToList();
+            for(int i=0; i < servers.Length; i++)
+            {
+                servers[i].UpdateData(playerObjects, unmovableGameObjects, enemyGameObjects);
             }
         }
         public void GameOver()
@@ -416,28 +437,65 @@ namespace Server
 
         public void election()//falta o T
         {
+            if (isCrashed) return;
+            isCoord = true;
             for (int i = 0; i < serverIds.Count(); i++)
             {
                 if (this.id < serverIds[i])
                 {
-                    //servers[i].message("ELECTION", this.id);
+                    try
+                    {
+                        servers[i].message("ELECTION", this.id);
+                    }
+                    catch(Exception)
+                    {
+                        //Just to test
+                    }
                 }
             }
+
+            if(answserTimer == null)
+            {
+                answserTimer = new System.Timers.Timer(MS_TIMER);
+                answserTimer.Elapsed += CoordinatorTimer;
+                answserTimer.AutoReset = true;
+                answserTimer.Enabled = true;
+            }
+            else
+            {
+                answserTimer.Start();
+            }
+
+               
+        }
+
+        private void CoordinatorTimer(Object source, ElapsedEventArgs e)
+        {
+            if(isCoord) coordinator();
+            answserTimer.Stop();
         }
 
         public void answer(int s)//corrido quando id maior que o this.id
         {
-            //servers[s].message("ANSWER", this.id);
+            if (isCrashed) return;
+            servers[s].message("ANSWER", this.id);
         }
 
         public void coordinator()
         {
-            for (int i = 0; i < serverIds.Count(); i++)
+            Console.WriteLine("Coordinator is : " + id);
+            this.CoordId = id;
+            for (int i = 0; i < serverIds.Length; i++)
             {
                 if (this.id > serverIds[i])
                 {
-                    //servers[i].message("COORDINATOR", this.id);
+                    servers[i].message("COORDINATOR", this.id);
                 }
+            }
+
+            for(int i = 0; i < connectedClients.Count; i++)
+            {
+                connectedClients[i].UpdateServer(this);
             }
         }
 
@@ -455,15 +513,78 @@ namespace Server
                     else
                         break;
                 case "COORDINATOR":
-                    this.CoordId = senderId;
+                    if (senderId > id)
+                    {
+                        this.CoordId = senderId;
+                        SetPing();
+                    }
+                    else coordinator();
                     break;
                 case "ANSWER":
-
+                    isCoord = false;
                     break;
                 default:
                     break;
             }
+        }
 
+        private void SetPing()
+        {
+            if (pingTimer == null)
+            {
+                pingTimer = new System.Timers.Timer(MS_TIMER * 2);
+                pingTimer.Elapsed += Ping;
+                pingTimer.AutoReset = true;
+                pingTimer.Enabled = true;
+            }
+            else pingTimer.Start();
+        }
+
+        private void Ping(Object source, ElapsedEventArgs e)
+        {
+            if (isCrashed) return;
+            try
+            {
+                bool isCoordAlive = servers[CoordId].IsAlive();
+            }
+            catch(Exception)
+            {
+                election();
+                pingTimer.Stop();
+            }
+        }
+
+        public bool IsAlive()
+        {
+            if (isCrashed) throw new Exception("Crashed");
+            return true;
+        }
+
+        public void SetReplicationData(int serverId, int[] serversId, IServer[] servers)
+        {
+            this.serverIds = serversId;
+            this.id = serverId;
+            this.servers = servers;
+
+            if (serverId == serverIds.Length - 1)
+                coordinator();
+        }
+
+        public void UpdateData(PlayerGameObject[] _playerObjects, UnmovableGameObject[] _unmovableObjects, EnemyGameObject[] _enemyObjects)
+        {
+            playerObjects = _playerObjects;
+            unmovableGameObjects = _unmovableObjects;
+            enemyGameObjects = _enemyObjects;
+        }
+
+        public void crash()
+        {
+            isCrashed = true;
+        }
+
+        public int getId()
+        {
+            return CoordId;
         }
     }
 }

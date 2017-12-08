@@ -29,6 +29,7 @@ namespace pacman {
         private int clientPlayerNumber;
         bool gameRunning;
         bool isFinished = false;
+        bool isCrashed = false;
 
         Movement currentMovement;
         int score = 0;
@@ -45,6 +46,11 @@ namespace pacman {
             label3.Text = "Press Join Game to join";
             label3.Visible = true;
             label1.Visible = false;
+        }
+
+        public void crash()
+        {
+            isCrashed = true;
         }
 
         private void ReadMoves(string path)
@@ -213,6 +219,7 @@ namespace pacman {
 
         public void doMovement(IPlayer movement, int playerNumber)
         {
+            if (isCrashed) throw new Exception("crash");
             try
             {
                 pacmans[playerNumber].Top = movement.GetY();
@@ -322,6 +329,8 @@ namespace pacman {
 
         private void addUnmovableObjects(IUnmovable[] unmovableGameObjects)
         {
+            if (isCrashed) throw new Exception("crash");
+
             unmovableObjects = new List<PictureBox>();
             for (int i = 0; i < unmovableGameObjects.Length; i++)
             {
@@ -358,6 +367,8 @@ namespace pacman {
 
         private void addNewEnemies(IEnemy[] enemies)
         {
+            if (isCrashed) throw new Exception("crash");
+
             gameEnemies = new List<PictureBox>();
             for (int i = 0; i < enemies.Length; i++)
             {
@@ -441,6 +452,43 @@ namespace pacman {
 		    ActivePlayers.AddRange(players);
 		}
 
+        public void UpdateServer(IServer server)
+        {
+            obj = server;
+        }
+
+        public void JoinGameByPuppet(IServer server, string port, string name)
+        {
+            JoinGame.Enabled = false;
+            gameRunning = false;
+            label3.Visible = false;
+
+            //Define client and server providers (full filter to be able to use events).  
+            clientProv = new BinaryClientFormatterSinkProvider();
+            serverProv = new BinaryServerFormatterSinkProvider();
+            serverProv.TypeFilterLevel =
+              System.Runtime.Serialization.Formatters.TypeFilterLevel.Full;
+
+            //Dummy props.
+            Hashtable props = new Hashtable();
+            props["name"] = "GameClient"+name;
+            props["port"] = int.Parse(port);
+
+            //Connect tcp channel with server and client provider settings.
+            channel = new TcpChannel(props, clientProv, serverProv);
+            ChannelServices.RegisterChannel(channel, false);
+
+            ClientServices servicos = new ClientServices(port, this);
+            RemotingServices.Marshal(servicos, "GameClient"+name,
+                typeof(ClientServices));
+
+            obj = server;
+            obj.RegisterClient(port, name);
+
+            tbChat.Text = "Connected! \r\n";
+            label1.Text = "Waiting for players...";
+        }
+
         TcpChannel channel;
         ChannelDataStore channelData;
         int port;
@@ -452,8 +500,7 @@ namespace pacman {
             label3.Visible = false;
             if (obj == null)
             {
-                ClientServices.form = this;
-  
+ 
                 //Define client and server providers (full filter to be able to use events).  
                 clientProv = new BinaryClientFormatterSinkProvider();
                 serverProv = new BinaryServerFormatterSinkProvider();
@@ -472,7 +519,7 @@ namespace pacman {
                 channelData = (ChannelDataStore)channel.ChannelData;
                 port = new Uri(channelData.ChannelUris[0]).Port;
 
-                ClientServices servicos = new ClientServices(port.ToString());
+                ClientServices servicos = new ClientServices(port.ToString(), this);
                 RemotingServices.Marshal(servicos, "GameClient",
                     typeof(ClientServices));
 
@@ -507,15 +554,17 @@ namespace pacman {
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
     delegate void EnemyMovement(IEnemy movement, int playerNumber);
     delegate void UnmovableMovement(IUnmovable movement, int playerNumber);
+    delegate void ServerUpdate(IServer server);
 
     public class ClientServices : MarshalByRefObject, IClient
     {
-        public static FormClient form;
+        public FormClient form;
         public string name;
 
-        public ClientServices(string name)
+        public ClientServices(string name, FormClient form)
         {
             this.name = name;
+            this.form = form;
         }
 
         public void UpdatePlayers(List<IClient> players) //fazer update da lista de ligações
@@ -570,6 +619,11 @@ namespace pacman {
         public override int GetHashCode()
         {
             return name.GetHashCode();
+        }
+
+        public void UpdateServer(IServer server)
+        {
+            form.Invoke(new ServerUpdate(form.UpdateServer), server);
         }
     }
 }

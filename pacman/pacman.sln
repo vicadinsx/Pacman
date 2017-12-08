@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Proxy", "Proxy\Proxy.csproj", "{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Puppetmaster", "Puppetmaster\Puppetmaster.csproj", "{F5E50F4D-1AC5-43C7-B6F0-6FDD318CD0B4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F460FC72-435E-4DB3-B11D-5EEDCB9A24E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5E50F4D-1AC5-43C7-B6F0-6FDD318CD0B4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5E50F4D-1AC5-43C7-B6F0-6FDD318CD0B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5E50F4D-1AC5-43C7-B6F0-6FDD318CD0B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5E50F4D-1AC5-43C7-B6F0-6FDD318CD0B4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
