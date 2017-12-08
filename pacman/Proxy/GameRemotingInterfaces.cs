@@ -81,7 +81,7 @@ namespace Proxy
     {
         //GameEvent method (Start Game, New Player, End Game, etc...)
         void GameEvent(string message, string auxMessage);
-        void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
+        void StartGame(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects);
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)

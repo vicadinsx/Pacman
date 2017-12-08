@@ -54,7 +54,7 @@ namespace Server
         int id;
         int[] serverIds;
         private const int MAX_NUMBER = 2;
-        private const int MS_TIMER = 30;
+        private const int MS_TIMER = 20;
         private const int NUM_COINS = 60;
         private bool gameRunning = false;
         IServer[] servers;
@@ -255,7 +255,7 @@ namespace Server
             {
                 try
                 {
-                    ((IClient)clients[i]).StartGame(i, playerObjects, enemyGameObjects, unmovableGameObjects);
+                    ((IClient)clients[i]).StartGame(null, i, playerObjects, enemyGameObjects, unmovableGameObjects);
                 }
                 catch (Exception e)
                 {
@@ -280,7 +280,6 @@ namespace Server
             }
 
             movementTimer = new System.Timers.Timer(MS_TIMER);
-
             movementTimer.Elapsed += RoundTimer;
             movementTimer.AutoReset = true;
             movementTimer.Enabled = true;
@@ -351,11 +350,15 @@ namespace Server
 
         public void RoundTimer(Object source, ElapsedEventArgs e)
         {
+            movementTimer.Stop();
+
             if (!gameRunning) return;
 
             ThreadStart tsUpdate = new ThreadStart(this.sendUpdates);
             Thread tUpdate = new Thread(tsUpdate);
             tUpdate.Start();
+
+            movementTimer.Start();
         }
 
         public void sendUpdates()
@@ -417,14 +420,14 @@ namespace Server
             {
                 if (this.id < serverIds[i])
                 {
-                    servers[i].message("ELECTION", this.id);
+                    //servers[i].message("ELECTION", this.id);
                 }
             }
         }
 
         public void answer(int s)//corrido quando id maior que o this.id
         {
-            servers[s].message("ANSWER", this.id);
+            //servers[s].message("ANSWER", this.id);
         }
 
         public void coordinator()
@@ -433,7 +436,7 @@ namespace Server
             {
                 if (this.id > serverIds[i])
                 {
-                    servers[i].message("COORDINATOR", this.id);
+                    //servers[i].message("COORDINATOR", this.id);
                 }
             }
         }

@@ -10,6 +10,7 @@ using System.Runtime.Remoting;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.IO;
 
 namespace pacman {
 
@@ -17,6 +18,7 @@ namespace pacman {
     public partial class FormClient : Form {
 
         List<IClient> ActivePlayers; //lista de peers para o chat
+        List<string> listOfMoves; //player moves if it exists file
         List<PictureBox> pacmans;
         List<PictureBox> gameEnemies;
         List<PictureBox> unmovableObjects;
@@ -26,9 +28,11 @@ namespace pacman {
         string lol = string.Empty;
         private int clientPlayerNumber;
         bool gameRunning;
+        bool isFinished = false;
 
         Movement currentMovement;
-        int score = 0;      
+        int score = 0;
+        int counter = 0;
 
         public FormClient() {
             
@@ -36,12 +40,27 @@ namespace pacman {
             label2.Visible = false;
 			gameRunning = false;
             ActivePlayers = new List<IClient>();
+            listOfMoves = new List<string>();
 
             label3.Text = "Press Join Game to join";
             label3.Visible = true;
             label1.Visible = false;
         }
 
+        private void ReadMoves(string path)
+        {
+            using (var reader = new StreamReader(path))
+            {
+                listOfMoves = new List<string>();
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine();
+                    var values = line.Split(',');
+
+                    listOfMoves.Add(values[1]);
+                }
+            }
+        }
 
         protected override bool ProcessCmdKey(ref System.Windows.Forms.Message msg, Keys keyData)
         {
@@ -88,6 +107,21 @@ namespace pacman {
             obj.RegisterMovement(clientPlayerNumber, currentMovement);
         }
 
+        private Movement getMovement(string movement)
+        {
+            switch(movement)
+            {
+                case "RIGHT":
+                    return Movement.RIGHT;
+                case "LEFT":
+                    return Movement.LEFT;
+                case "DOWN":
+                    return Movement.DOWN;
+                case "UP":
+                    return Movement.UP;
+            }
+            return Movement.UNDEFINED;
+        }
         private void keyisup(object sender, KeyEventArgs e)
         {
             if (!gameRunning) return;
@@ -197,7 +231,21 @@ namespace pacman {
 
                 if (playerNumber == this.clientPlayerNumber)
                 {
+                    if (isFinished)
+                    {
+                        obj.UnRegisterMovement(clientPlayerNumber, movement.GetMovement());
+                        isFinished = false;
+                    }
+
                     score = movement.getScore();
+                    if(counter < listOfMoves.Count)
+                    {
+                        obj.UnRegisterMovement(clientPlayerNumber, movement.GetMovement());
+                        obj.RegisterMovement(clientPlayerNumber, getMovement(listOfMoves[counter]));
+                        counter++;
+                        if (counter == listOfMoves.Count)
+                            isFinished = true;
+                    }
                 }
 
                 label1.Text = "Score: " + score;
@@ -250,9 +298,12 @@ namespace pacman {
             }
         }
 
-        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
+        public void StartGame(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
         {
-            this.clientPlayerNumber = playerNumber; 
+            if(!string.IsNullOrEmpty(filePath))
+                ReadMoves(filePath);
+
+            this.clientPlayerNumber = playerNumber;
             if (playerNumber != -1)
             { 
                 gameRunning = true;
@@ -452,7 +503,7 @@ namespace pacman {
     delegate void Message(string mensagem, string sender, string auxMessage);
     delegate void ActivePlayers(List<IClient> players);
     delegate void DelGameEvent(string mensagem, string auxMessage);
-    delegate void StartGameEvent(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
+    delegate void StartGameEvent(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
     delegate void PlayerMovement(IPlayer movement, int playerNumber);
     delegate void EnemyMovement(IEnemy movement, int playerNumber);
     delegate void UnmovableMovement(IUnmovable movement, int playerNumber);
@@ -496,9 +547,9 @@ namespace pacman {
             form.Invoke(new DelGameEvent(form.GameEvent), message, auxMessage);
         }
 
-        public void StartGame(int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
+        public void StartGame(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
-            form.Invoke(new StartGameEvent(form.StartGame), playerNumber, players, enemies, unmovableObjects);
+            form.Invoke(new StartGameEvent(form.StartGame), filePath, playerNumber, players, enemies, unmovableObjects);
         }
 
  		public void Message(String type , String sender, String message)
@@ -508,7 +559,7 @@ namespace pacman {
 
         public void StartViewingGame(IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
-            form.Invoke(new StartGameEvent(form.StartGame), -1, players, enemies, unmovableObjects);
+            form.Invoke(new StartGameEvent(form.StartGame), null , - 1, players, enemies, unmovableObjects);
         }
 
         public override bool Equals(object obj)
