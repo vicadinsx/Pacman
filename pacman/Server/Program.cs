@@ -48,6 +48,7 @@ namespace Server
         Dictionary<int, PlayerGameObject[]> playerByRound;
         Dictionary<int, UnmovableGameObject[]> unmovableByRound;
         Dictionary<int, EnemyGameObject[]> enemyByRound;
+        Dictionary<int, bool> isDelayed = new Dictionary<int, bool>();
 
         PlayerGameObject[] playerObjects;
         UnmovableGameObject[] unmovableGameObjects;
@@ -106,6 +107,11 @@ namespace Server
         public void UnFreeze()
         {
             isFrozen = false;
+        }
+
+        public void delay(string PID)
+        {
+            isDelayed.Add(int.Parse(PID),true);
         }
 
         private void updateGame()

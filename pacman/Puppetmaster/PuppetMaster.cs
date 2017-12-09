@@ -216,7 +216,14 @@ namespace Puppetmaster
 
         private static void InjectDelayCommand(string PIDSource, string PIDDestiny)
         {
-
+            //if (servers.ContainsKey(PIDSource))
+            //    servers[PIDSource].delay(PIDDestiny);
+            //else if (clients.ContainsKey(PIDSource))
+            //    clients[PIDSource].delay(PIDDestiny);
+            //if (servers.ContainsKey(PIDDestiny))
+            //    servers[PIDDestiny].delay(PIDSource);
+            //else if (clients.ContainsKey(PIDDestiny))
+            //    clients[PIDDestiny].delay(PIDSource);
         }
 
         private static void LocalStateCommand(string PID, string RoundId)

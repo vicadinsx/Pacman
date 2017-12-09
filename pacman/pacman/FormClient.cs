@@ -47,6 +47,7 @@ namespace pacman {
             ActivePlayers = new List<IClient>();
             listOfMoves = new List<string>();
 
+            Dictionary<int, bool> isDelayed = new Dictionary<int, >(); 
             unmovablesRound = new Dictionary<int, IUnmovable[]>();
             playerRound = new Dictionary<int, IPlayer[]>();
             enemyRound = new Dictionary<int, IEnemy[]>();
@@ -56,6 +57,10 @@ namespace pacman {
             label1.Visible = false;
         }
 
+        public void delay(string PID)
+        {
+          //  isDelayed.Add(int.Parse(PID), true);
+        }
         public void crash()
         {
             isCrashed = true;
