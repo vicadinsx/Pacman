@@ -209,10 +209,25 @@ namespace Server
                     {
                         createEnemies();
                         createUnmovableObjects();
+                        for (int i = 0; i < MAX_NUMBER; i++)
+                        {
+                            playerObjects[i] = new PlayerGameObject(i);
+                        }
 
                         ThreadStart ts = new ThreadStart(this.StartGame);
                         Thread t = new Thread(ts);
                         t.Start();
+
+                        unmovableByRound.Add(roundNumber, (UnmovableGameObject[])unmovableGameObjects.Clone());
+                        enemyByRound.Add(roundNumber, (EnemyGameObject[])enemyGameObjects.Clone());
+                        playerByRound.Add(roundNumber, (PlayerGameObject[])playerObjects.Clone());
+
+                        roundNumber++;
+
+                        movementTimer = new System.Timers.Timer(MS_TIMER);
+                        movementTimer.Elapsed += RoundTimer;
+                        movementTimer.AutoReset = true;
+                        movementTimer.Enabled = true;
                     }
                 }
                 else
@@ -270,11 +285,6 @@ namespace Server
         {
             gameRunning = true;
 
-            for (int i = 0; i < MAX_NUMBER; i++)
-            {
-                playerObjects[i] = new PlayerGameObject(i);
-            }
-
             for (int i = 0; i < clients.Count; i++)
             {
                 try
@@ -302,17 +312,6 @@ namespace Server
                     viewers.RemoveAt(i);
                 }
             }
-
-            unmovableByRound.Add(roundNumber, (UnmovableGameObject[])unmovableGameObjects.Clone());
-            enemyByRound.Add(roundNumber, (EnemyGameObject[])enemyGameObjects.Clone());
-            playerByRound.Add(roundNumber, (PlayerGameObject[])playerObjects.Clone());
-
-            roundNumber++;
-
-            movementTimer = new System.Timers.Timer(MS_TIMER);
-            movementTimer.Elapsed += RoundTimer;
-            movementTimer.AutoReset = true;
-            movementTimer.Enabled = true;
         }
 
         public void StartViewer(object client)
@@ -386,14 +385,14 @@ namespace Server
 
             if (!gameRunning) return;
 
-            ThreadStart tsUpdate = new ThreadStart(this.sendUpdates);
+            ParameterizedThreadStart tsUpdate = new ParameterizedThreadStart(this.sendUpdates);
             Thread tUpdate = new Thread(tsUpdate);
-            tUpdate.Start();
+            tUpdate.Start(roundNumber);
 
             roundNumber++;
         }
 
-        public void sendUpdates()
+        public void sendUpdates(object round)
         {
             updateGame();
             List<IClient> removedClients = new List<IClient>();
@@ -403,7 +402,7 @@ namespace Server
                 {
                     try
                     {
-                        ((IClient)connectedClients[i]).UpdateGame(playerObjects, enemyGameObjects, unmovableGameObjects);
+                        ((IClient)connectedClients[i]).UpdateGame((int)round, playerObjects, enemyGameObjects, unmovableGameObjects);
                     }
                     catch (Exception ex)
                     {
@@ -624,19 +623,22 @@ namespace Server
 
         public string LocalState(int round)
         {
+            if (!enemyByRound.ContainsKey(round) || !unmovableByRound.ContainsKey(round) || !playerByRound.ContainsKey(round))
+                return "No Results";
+
             string result = string.Empty;
             EnemyGameObject[] enemies = enemyByRound[round - 1];
             UnmovableGameObject[] unmovables = unmovableByRound[round - 1];
             PlayerGameObject[] players = playerByRound[round - 1];
 
-            for(int i=0; i < enemies.Length; i++)
+            for (int i = 0; i < enemies.Length; i++)
             {
-                result += "M, " + enemies[i].x + ", " + enemies[i].y +'\n';
+                result += "M, " + enemies[i].x + ", " + enemies[i].y + '\n';
             }
 
             for (int i = 0; i < players.Length; i++)
             {
-                result += "P"+i+", "+ (players[i].isDead ? "L, ":"P, ") + players[i].x + ", " + players[i].y + '\n';
+                result += "P" + i + ", " + (players[i].isDead ? "L, " : "P, ") + players[i].x + ", " + players[i].y + '\n';
             }
 
             for (int i = 0; i < unmovables.Length; i++)

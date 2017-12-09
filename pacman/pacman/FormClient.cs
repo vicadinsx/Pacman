@@ -31,6 +31,10 @@ namespace pacman {
         bool isFinished = false;
         bool isCrashed = false;
 
+        Dictionary<int, IUnmovable[]> unmovablesRound;
+        Dictionary<int, IPlayer[]> playerRound;
+        Dictionary<int, IEnemy[]> enemyRound;
+
         Movement currentMovement;
         int score = 0;
         int counter = 0;
@@ -42,6 +46,10 @@ namespace pacman {
 			gameRunning = false;
             ActivePlayers = new List<IClient>();
             listOfMoves = new List<string>();
+
+            unmovablesRound = new Dictionary<int, IUnmovable[]>();
+            playerRound = new Dictionary<int, IPlayer[]>();
+            enemyRound = new Dictionary<int, IEnemy[]>();
 
             label3.Text = "Press Join Game to join";
             label3.Visible = true;
@@ -172,18 +180,52 @@ namespace pacman {
             }
         }
 
-        public void doEnemyMovement(IEnemy enemy, int enemyNumber)
+        public string LocalState(int roundNumber)
         {
+            string result = string.Empty;
+            if (!enemyRound.ContainsKey(roundNumber)) return "No Result";
+
+            IEnemy[] enemies = enemyRound[roundNumber - 1];
+            IUnmovable[] unmovables = unmovablesRound[roundNumber - 1];
+            IPlayer[] players = playerRound[roundNumber - 1];
+
+            for (int i = 0; i < enemies.Length; i++)
+            {
+                result += "M, " + enemies[i].GetX() + ", " + enemies[i].GetY() + '\n';
+            }
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                result += "P" + i + ", " + (players[i].isPlayerDead() ? "L, " : "P, ") + players[i].GetX() + ", " + players[i].GetY() + '\n';
+            }
+
+            for (int i = 0; i < unmovables.Length; i++)
+            {
+                if (unmovables[i].GetEnemyType() == UnmovableType.COIN && unmovables[i].isVisible())
+                    result += "C, " + unmovables[i].GetX() + ", " + unmovables[i].GetY() + '\n';
+
+                if (unmovables[i].GetEnemyType() == UnmovableType.WALL)
+                    result += "W, " + unmovables[i].GetX() + ", " + unmovables[i].GetY() + '\n';
+            }
+
+            return result;
+        }
+        public void doEnemyMovement(IEnemy[] enemy,int roundNumber)
+        {
+            enemyRound.Add(roundNumber, enemy);
             try
             {
-                gameEnemies[enemyNumber].Top = enemy.GetY() - enemy.GetSizeY();
-                gameEnemies[enemyNumber].Left = enemy.GetX() - enemy.GetSizeX();
-
-                if (!gameRunning) return;
-
-                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+                for (int enemyNumber = 0; enemyNumber < enemy.Length; enemyNumber++)
                 {
-                    obj.PlayerKilled(clientPlayerNumber);
+                    gameEnemies[enemyNumber].Top = enemy[enemyNumber].GetY() - enemy[enemyNumber].GetSizeY();
+                    gameEnemies[enemyNumber].Left = enemy[enemyNumber].GetX() - enemy[enemyNumber].GetSizeX();
+
+                    if (!gameRunning) return;
+
+                    if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(gameEnemies[enemyNumber].Bounds))
+                    {
+                        obj.PlayerKilled(clientPlayerNumber);
+                    }
                 }
             }
             catch(Exception ex)
@@ -191,24 +233,29 @@ namespace pacman {
                 throw new Exception("Error on doEnemyMovement : " + ex.Message);
             }
         }
-        public void doUnmovableMovement(IUnmovable unmovable, int unmovableNumber)
+        public void doUnmovableMovement(IUnmovable[] unmovable, int roundNumber)
         {
+            unmovablesRound.Add(roundNumber, unmovable);
             try
             {
-                unmovableObjects[unmovableNumber].Visible = unmovable.isVisible();
-                unmovableObjects[unmovableNumber].Top = unmovable.GetY();
-                unmovableObjects[unmovableNumber].Left = unmovable.GetX();
-
-                if (!gameRunning) return;
-
-                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.WALL)
+                for (int unmovableNumber = 0; unmovableNumber < unmovable.Length; unmovableNumber++)
                 {
-                    obj.PlayerKilled(clientPlayerNumber);
-                }
 
-                if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable.GetEnemyType() == UnmovableType.COIN)
-                {
-                    obj.GatheredCoin(clientPlayerNumber, unmovableNumber);
+                    unmovableObjects[unmovableNumber].Visible = unmovable[unmovableNumber].isVisible();
+                    unmovableObjects[unmovableNumber].Top = unmovable[unmovableNumber].GetY();
+                    unmovableObjects[unmovableNumber].Left = unmovable[unmovableNumber].GetX();
+
+                    if (!gameRunning) return;
+
+                    if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable[unmovableNumber].GetEnemyType() == UnmovableType.WALL)
+                    {
+                        obj.PlayerKilled(clientPlayerNumber);
+                    }
+
+                    if (pacmans[clientPlayerNumber].Bounds.IntersectsWith(unmovableObjects[unmovableNumber].Bounds) && unmovable[unmovableNumber].GetEnemyType() == UnmovableType.COIN)
+                    {
+                        obj.GatheredCoin(clientPlayerNumber, unmovableNumber);
+                    }
                 }
             }
             catch (Exception ex)
@@ -217,45 +264,51 @@ namespace pacman {
             }
         }
 
-        public void doMovement(IPlayer movement, int playerNumber)
+        public void doMovement(IPlayer[] movements, int roundNumber)
         {
             if (isCrashed) throw new Exception("crash");
+
+            playerRound.Add(roundNumber, movements);
             try
             {
-                pacmans[playerNumber].Top = movement.GetY();
-                pacmans[playerNumber].Left = movement.GetX();
-
-                if (movement.isMovementChanged())
-                    defineMovementImage(movement.GetMovement(), playerNumber);
-
-                if (!gameRunning) return;
-
-                if (playerNumber == this.clientPlayerNumber && movement.isPlayerDead())
+                for (int playerNumber=0; playerNumber < movements.Length; playerNumber++)
                 {
-                    label2.Text = "You are dead";
-                    label2.Visible = true;
-                }
 
-                if (playerNumber == this.clientPlayerNumber)
-                {
-                    if (isFinished)
+                    pacmans[playerNumber].Top = movements[playerNumber].GetY();
+                    pacmans[playerNumber].Left = movements[playerNumber].GetX();
+
+                    if (movements[playerNumber].isMovementChanged())
+                        defineMovementImage(movements[playerNumber].GetMovement(), playerNumber);
+
+                    if (!gameRunning) return;
+
+                    if (playerNumber == this.clientPlayerNumber && movements[playerNumber].isPlayerDead())
                     {
-                        obj.UnRegisterMovement(clientPlayerNumber, movement.GetMovement());
-                        isFinished = false;
+                        label2.Text = "You are dead";
+                        label2.Visible = true;
                     }
 
-                    score = movement.getScore();
-                    if(counter < listOfMoves.Count)
+                    if (playerNumber == this.clientPlayerNumber)
                     {
-                        obj.UnRegisterMovement(clientPlayerNumber, movement.GetMovement());
-                        obj.RegisterMovement(clientPlayerNumber, getMovement(listOfMoves[counter]));
-                        counter++;
-                        if (counter == listOfMoves.Count)
-                            isFinished = true;
-                    }
-                }
+                        if (isFinished)
+                        {
+                            obj.UnRegisterMovement(clientPlayerNumber, movements[playerNumber].GetMovement());
+                            isFinished = false;
+                        }
 
-                label1.Text = "Score: " + score;
+                        score = movements[playerNumber].getScore();
+                        if (counter < listOfMoves.Count)
+                        {
+                            obj.UnRegisterMovement(clientPlayerNumber, movements[playerNumber].GetMovement());
+                            obj.RegisterMovement(clientPlayerNumber, getMovement(listOfMoves[counter]));
+                            counter++;
+                            if (counter == listOfMoves.Count)
+                                isFinished = true;
+                        }
+                    }
+
+                    label1.Text = "Score: " + score;
+                }
             }
             catch (Exception ex)
             {
@@ -307,7 +360,11 @@ namespace pacman {
 
         public void StartGame(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovableGameObjects)
         {
-            if(!string.IsNullOrEmpty(filePath))
+            unmovablesRound.Add(0, unmovableGameObjects);
+            enemyRound.Add(0, enemies);
+            playerRound.Add(0, players);
+
+            if (!string.IsNullOrEmpty(filePath))
                 ReadMoves(filePath);
 
             this.clientPlayerNumber = playerNumber;
@@ -492,7 +549,7 @@ namespace pacman {
 
             obj = server;
             obj.RegisterClient(port, name);
-
+            ReadMoves(name+".csv");
             tbChat.Text = "Connected! \r\n";
             label1.Text = "Waiting for players...";
         }
@@ -559,9 +616,11 @@ namespace pacman {
     delegate void ActivePlayers(List<IClient> players);
     delegate void DelGameEvent(string mensagem, string auxMessage);
     delegate void StartGameEvent(string filePath, int playerNumber, IPlayer[] players, IEnemy[] enemies, IUnmovable[] unmovables);
-    delegate void PlayerMovement(IPlayer movement, int playerNumber);
-    delegate void EnemyMovement(IEnemy movement, int playerNumber);
-    delegate void UnmovableMovement(IUnmovable movement, int playerNumber);
+
+    delegate void PlayerMovement(IPlayer[] movement, int roundNumber);
+    delegate void EnemyMovement(IEnemy[] movement, int roundNumber);
+    delegate void UnmovableMovement(IUnmovable[] movement, int roundNumber);
+
     delegate void ServerUpdate(IServer server);
 
     public class ClientServices : MarshalByRefObject, IClient
@@ -580,23 +639,14 @@ namespace pacman {
             form.Invoke(new ActivePlayers(form.ActivePlayersUpdate), players);
         }
 
-        public void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects)
+        public void UpdateGame(int roundNumber, IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects)
         {
             //TODO fazer isto tudo sem fors (fica mais sincrono)
-            for (int i = 0; i < movements.Length; i++)
-            {
-                form.Invoke(new PlayerMovement(form.doMovement), movements[i], i);
-            }
+            form.Invoke(new PlayerMovement(form.doMovement), movements, roundNumber);
 
-            for (int i = 0; i < enemies.Length; i++)
-            {
-                form.Invoke(new EnemyMovement(form.doEnemyMovement), enemies[i], i);
-            }
+            form.Invoke(new EnemyMovement(form.doEnemyMovement), enemies, roundNumber);
 
-            for(int i=0; i < unmovableObjects.Length; i++)
-            {
-                form.Invoke(new UnmovableMovement(form.doUnmovableMovement), unmovableObjects[i], i);
-            }
+            form.Invoke(new UnmovableMovement(form.doUnmovableMovement), unmovableObjects, roundNumber);
         }
 
         public void GameEvent(string message, string auxMessage)

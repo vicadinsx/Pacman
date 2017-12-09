@@ -9,6 +9,7 @@ using System.Threading;
 using pacman;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Puppetmaster
 {
@@ -33,7 +34,22 @@ namespace Puppetmaster
 
                 try
                 {
-                    HandleCommand(command);
+                    if(!command[0].Equals("Read"))
+                        HandleCommand(command);
+                    else
+                    {
+                        using (var reader = new StreamReader(command[1]))
+                        {
+                            while (!reader.EndOfStream)
+                            {
+                                var line = reader.ReadLine();
+                                command = line.Split(' ');
+
+                                HandleCommand(command);
+                            }
+                        }
+                    }
+                        
                 }
                 catch (IndexOutOfRangeException)
                 {
@@ -207,6 +223,8 @@ namespace Puppetmaster
         {
             if (servers.ContainsKey(PID))
                 Console.WriteLine(servers[PID].LocalState(int.Parse(RoundId)));
+            else if(clients.ContainsKey(PID))
+                Console.WriteLine(clients[PID].LocalState(int.Parse(RoundId)));
         }
 
         private static void WaitCommand(string time)

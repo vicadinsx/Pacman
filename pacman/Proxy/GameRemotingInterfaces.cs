@@ -100,7 +100,7 @@ namespace Proxy
 
         //TODO
         //Create methods for Outputs (list of "pacmans" probably)
-        void UpdateGame(IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects);
+        void UpdateGame(int roundNumber, IPlayer[] movements, IEnemy[] enemies, IUnmovable[] unmovableObjects);
         void UpdatePlayers(List<IClient> client);
         void Message(string Message, string Sender, string auxMessage);
 
