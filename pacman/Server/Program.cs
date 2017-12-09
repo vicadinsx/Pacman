@@ -253,10 +253,9 @@ namespace Server
                 {
                     ((IClient)connectedClients[i]).UpdatePlayers(connectedClients);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine("Failed sending message to client on UpdatePlayers. Removing client. " + e.Message);
-                    //connectedClients.RemoveAt(i);
+                    //Nothing
                 }
             }
         }
@@ -269,10 +268,9 @@ namespace Server
                 {
                     ((IClient)connectedClients[i]).GameEvent(message, auxMessage);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine("Failed sending message to client on PublishGameEvent. Removing client. " + e.Message);
-                    //clients.RemoveAt(i);
+                    //Nothing
                 }
             }
         }
@@ -297,10 +295,9 @@ namespace Server
                 {
                     ((IClient)clients[i]).StartGame(null, i, playerObjects, enemyGameObjects, unmovableGameObjects);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine("Failed sending message to client on StartGame. Removing client. " + e.Message);
-                    clients.RemoveAt(i);
+                    //Nothing
                 }
             }
 
@@ -312,10 +309,9 @@ namespace Server
                 {
                     ((IClient)viewers[i]).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    Console.WriteLine("Failed sending message to client on StartGame. Removing client. " + e.Message);
-                    viewers.RemoveAt(i);
+                    //Nothing
                 }
             }
         }
@@ -326,9 +322,9 @@ namespace Server
             {
                 ((IClient)client).StartViewingGame(playerObjects, enemyGameObjects, unmovableGameObjects);
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                Console.WriteLine("Failed sending message to client on StartViewer. Removing client. " + e.Message);
+                //Nothing
             }
         }
 
@@ -402,19 +398,23 @@ namespace Server
         {
             updateGame();
             List<IClient> removedClients = new List<IClient>();
-            lock (connectedClients)
+
+            if (!isFrozen)
             {
-                for (int i = 0; i < connectedClients.Count; i++)
+                lock (connectedClients)
                 {
-                    try
+                    for (int i = 0; i < connectedClients.Count; i++)
                     {
-                        ((IClient)connectedClients[i]).UpdateGame((int)round, playerObjects, enemyGameObjects, unmovableGameObjects);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine("Failed sending message to client on RoundTimer. Removing client. " + ex.Message);
-                        removedClients.Add(connectedClients[i]);
-                        playerObjects[i].isDead = true;
+                        try
+                        {
+                            ((IClient)connectedClients[i]).UpdateGame((int)round, playerObjects, enemyGameObjects, unmovableGameObjects);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("Failed sending message to client on RoundTimer. Removing client. " + ex.Message);
+                            removedClients.Add(connectedClients[i]);
+                            playerObjects[i].isDead = true;
+                        }
                     }
                 }
             }
@@ -461,6 +461,7 @@ namespace Server
         public void election()//falta o T
         {
             if (isCrashed) return;
+            if (isFrozen) return;
             isCoord = true;
             for (int i = 0; i < serverIds.Count(); i++)
             {
@@ -501,19 +502,16 @@ namespace Server
         public void answer(int s)//corrido quando id maior que o this.id
         {
             if (isCrashed) return;
+            if (isFrozen) return;
             servers[s].message("ANSWER", this.id);
         }
 
         public void coordinator()
         {
-            Console.WriteLine("Coordinator is : " + id);
             this.CoordId = id;
             for (int i = 0; i < serverIds.Length; i++)
             {
-                if (this.id > serverIds[i])
-                {
-                    servers[i].message("COORDINATOR", this.id);
-                }
+                servers[i].message("COORDINATOR", this.id);
             }
 
             for(int i = 0; i < connectedClients.Count; i++)
@@ -541,7 +539,10 @@ namespace Server
                         this.CoordId = senderId;
                         SetPing();
                     }
-                    else coordinator();
+                    else if(!isFrozen && !isCrashed)
+                        coordinator();
+                    else
+                        this.CoordId = senderId;
                     break;
                 case "ANSWER":
                     isCoord = false;
@@ -566,6 +567,7 @@ namespace Server
         private void Ping(Object source, ElapsedEventArgs e)
         {
             if (isCrashed) return;
+            if (isFrozen) return;
             try
             {
                 bool isCoordAlive = servers[CoordId].IsAlive();
@@ -580,6 +582,7 @@ namespace Server
         public bool IsAlive()
         {
             if (isCrashed) throw new Exception("Crashed");
+            if (isFrozen) throw new Exception("Frozen");
             return true;
         }
 
@@ -657,6 +660,11 @@ namespace Server
             }
 
             return result;
+        }
+
+        public bool IsServerCoord()
+        {
+            return id == CoordId;
         }
     }
 }

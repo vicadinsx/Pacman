@@ -30,6 +30,7 @@ namespace pacman {
         bool gameRunning;
         bool isFinished = false;
         bool isCrashed = false;
+        bool isFreezed = false;
 
         Dictionary<int, IUnmovable[]> unmovablesRound;
         Dictionary<int, IPlayer[]> playerRound;
@@ -47,7 +48,7 @@ namespace pacman {
             ActivePlayers = new List<IClient>();
             listOfMoves = new List<string>();
 
-            Dictionary<int, bool> isDelayed = new Dictionary<int, >(); 
+            Dictionary<int, bool> isDelayed = new Dictionary<int, bool>(); 
             unmovablesRound = new Dictionary<int, IUnmovable[]>();
             playerRound = new Dictionary<int, IPlayer[]>();
             enemyRound = new Dictionary<int, IEnemy[]>();
@@ -64,6 +65,16 @@ namespace pacman {
         public void crash()
         {
             isCrashed = true;
+        }
+
+        public void Freeze()
+        {
+            isFreezed = true;
+        }
+
+        public void UnFreeze()
+        {
+            isFreezed = false;
         }
 
         private void ReadMoves(string path)
@@ -105,6 +116,7 @@ namespace pacman {
 
         private void keyisdown(object sender, KeyEventArgs e) {
             if (!gameRunning) return;
+            if (isFreezed) return;
 
             if (e.KeyCode == Keys.Left) {
                 pacmans[clientPlayerNumber].Image = Properties.Resources.Left;
@@ -144,7 +156,7 @@ namespace pacman {
         private void keyisup(object sender, KeyEventArgs e)
         {
             if (!gameRunning) return;
-
+            if (isFreezed) return;
 
             if (e.KeyCode == Keys.Left)
             {
@@ -218,6 +230,7 @@ namespace pacman {
         public void doEnemyMovement(IEnemy[] enemy,int roundNumber)
         {
             enemyRound.Add(roundNumber, enemy);
+            if (isFreezed) return;
             try
             {
                 for (int enemyNumber = 0; enemyNumber < enemy.Length; enemyNumber++)
@@ -241,6 +254,7 @@ namespace pacman {
         public void doUnmovableMovement(IUnmovable[] unmovable, int roundNumber)
         {
             unmovablesRound.Add(roundNumber, unmovable);
+            if (isFreezed) return;
             try
             {
                 for (int unmovableNumber = 0; unmovableNumber < unmovable.Length; unmovableNumber++)
@@ -272,8 +286,9 @@ namespace pacman {
         public void doMovement(IPlayer[] movements, int roundNumber)
         {
             if (isCrashed) throw new Exception("crash");
-
             playerRound.Add(roundNumber, movements);
+
+            if (isFreezed) return;
             try
             {
                 for (int playerNumber=0; playerNumber < movements.Length; playerNumber++)

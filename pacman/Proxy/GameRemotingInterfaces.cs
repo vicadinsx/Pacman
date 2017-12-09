@@ -89,6 +89,7 @@ namespace Proxy
         void DefineVariables(int maxPlayers, int roundTime);
         string Status();
         string LocalState(int round);
+        bool IsServerCoord();
     }
 
     //Client interface

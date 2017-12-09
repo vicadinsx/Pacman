@@ -201,17 +201,29 @@ namespace Puppetmaster
         }
         private static void FreezeCommand(string PID)
         {
-            //if (servers.ContainsKey(PID))
-            //    servers[PID].freeze();
-            //else if (clients.ContainsKey(PID))
-            //    clients[PID].freeze();
+            if (servers.ContainsKey(PID))
+            {
+                for (int i = 0; i < serversRep.Length; i++)
+                {
+                    if (serversRep[i].IsServerCoord())
+                    {
+                        serversRep[i].Freeze();
+                        break;
+                    }
+                }
+            }
+            else if (clients.ContainsKey(PID))
+                clients[PID].Freeze();
         }
         private static void UnFreezeCommand(string PID)
         {
-            //if (servers.ContainsKey(PID))
-            //    servers[PID].unfreeze();
-            //else if (clients.ContainsKey(PID))
-            //    clients[PID].unfreeze();
+            if (servers.ContainsKey(PID))
+            {
+                for(int i=0; i<serversRep.Length; i++)
+                    serversRep[i].UnFreeze();
+            }
+            else if (clients.ContainsKey(PID))
+                clients[PID].UnFreeze();
         }
 
         private static void InjectDelayCommand(string PIDSource, string PIDDestiny)
