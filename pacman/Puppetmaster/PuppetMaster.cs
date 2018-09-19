@@ -195,7 +195,16 @@ namespace Puppetmaster
         private static void CrashCommand(string PID)
         {
             if (servers.ContainsKey(PID))
-                servers[PID].crash();
+            {
+                for (int i = 0; i < serversRep.Length; i++)
+                {
+                    if (serversRep[i].IsServerCoord())
+                    {
+                        serversRep[i].crash();
+                        break;
+                    }
+                }
+            }
             else if (clients.ContainsKey(PID))
                 clients[PID].crash();
         }

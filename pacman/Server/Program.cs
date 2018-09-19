@@ -135,7 +135,8 @@ namespace Server
                 enemyGameObjects[2].IntersectsWith(unmovableGameObjects[2].getRectangle()) ||
                 enemyGameObjects[2].IntersectsWith(unmovableGameObjects[3].getRectangle()) ||
                 enemyGameObjects[2].x > 370 || enemyGameObjects[2].x < 5)
-                    enemyGameObjects[2].enemyXSpeed = -enemyGameObjects[2].enemyXSpeed;
+
+                enemyGameObjects[2].enemyXSpeed = -enemyGameObjects[2].enemyXSpeed;
 
             if(enemyGameObjects[2].y < 60 || enemyGameObjects[2].y > 360)
             {
